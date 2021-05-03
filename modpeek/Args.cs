@@ -7,8 +7,11 @@ namespace VintageStory.ModPeek
         [Option('h', "help", HelpText = "Print help info and exit")]
         public bool PrintHelp { get; set; }
 
-        [Option('d', "id", HelpText = "Print modid and exit")]
-        public bool Id { get; set; }
+        [Option('i', "idandversion", HelpText = "Print modid:version and exit")]
+        public bool IdAndVersion { get; set; }
+
+        [Option('f', "file", HelpText = "Mod File")]
+        public string File { get; set; }
 
     }
 

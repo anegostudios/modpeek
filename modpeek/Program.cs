@@ -30,13 +30,11 @@ namespace VintageStory.ModPeek
                 return;
             }
 
-            string filepath = rawArgs[rawArgs.Length - 1];
-            rawArgs = Util.Pop(rawArgs);
             var args = new Args();
             Parser parser = new Parser();
             parser.ParseArguments(rawArgs, args);
 
-            if (filepath == null)
+            if (args.File == null)
             {
                 Console.Error.WriteLine("Missing file");
                 Environment.Exit(1);
@@ -45,10 +43,10 @@ namespace VintageStory.ModPeek
 
             ModInfo minfo;
 
-            FileInfo f = new FileInfo(filepath);
+            FileInfo f = new FileInfo(args.File);
             if (!f.Exists)
             {
-                Console.Error.WriteLine("No such file '"+filepath+"'");
+                Console.Error.WriteLine("No such file '" + args.File + "'");
                 Environment.Exit(1);
                 return;
             }
@@ -80,9 +78,9 @@ namespace VintageStory.ModPeek
             }
 
 
-            if (args.Id)
+            if (args.IdAndVersion)
             {
-                Console.WriteLine(minfo.ModID);
+                Console.WriteLine(minfo.ModID + ":" + minfo.Version);
             }
             else
             {
