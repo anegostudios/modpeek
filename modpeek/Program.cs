@@ -11,16 +11,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Vintagestory.API.Common;
+using Mono.Cecil;
 
 namespace VintageStory.ModPeek
 {
 
     class Program
     {
-        static string dataPathMods;
-        static string dataPathbinariesMods;
-        static string dataPathbinaries;
-
         static void Main(string[] rawArgs)
         {
             if (rawArgs.Length == 0)
@@ -50,10 +47,6 @@ namespace VintageStory.ModPeek
                 Environment.Exit(1);
                 return;
             }
-
-            loadLibPaths();
-
-
 
             switch (f.Extension)
             {
@@ -96,85 +89,9 @@ namespace VintageStory.ModPeek
             Environment.Exit(0);
         }
 
-
-        public static string libFolderName = "Lib" + (IntPtr.Size == 4 ? "32" : "64");
-        static string EnvSearchPathName;
-        
-        private static void loadLibPaths()
-        {
-            bool isWindows = false;
-            if (Path.DirectorySeparatorChar == '\\')
-            {
-                EnvSearchPathName = "PATH";
-                isWindows = true;
-            }
-            else
-            if (IsMac())
-            {
-                EnvSearchPathName = "DYLD_FRAMEWORK_PATH";
-            }
-            else
-            {
-                EnvSearchPathName = "LD_LIBRARY_PATH";
-            }
-
-            string appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            dataPathMods = Path.Combine(appdata, "VintagestoryData", "Mods");
-            dataPathbinariesMods = Path.Combine(appdata, "Vintagestory", "Mods");
-            dataPathbinaries = Path.Combine(appdata, "Vintagestory");
-
-            // 1. Set dll ENV Path
-            string libPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, libFolderName);
-
-            var name = EnvSearchPathName;
-            var value = libPath + ";" + Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Lib") + ";" + Environment.GetEnvironmentVariable(name);
-            Environment.SetEnvironmentVariable(name, value);
-
-            // 2. Resolve dll path manually
-            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolve);
-
-            // 4. Preload Cairo and OpenAL to force windows to load them from the lib folder
-            if (isWindows)
-            {
-                LoadLibrary(Path.Combine(libPath, "openal32"));
-                LoadLibrary(Path.Combine(libPath, "libcairo-2"));
-            }
-
-        }
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr LoadLibrary(string dllToLoad);
-        [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-
-
-
-        static bool IsMac()
-        {
-            IntPtr buf = IntPtr.Zero;
-            try
-            {
-                buf = Marshal.AllocHGlobal(8192);
-                if (uname(buf) == 0)
-                {
-                    string os = Marshal.PtrToStringAnsi(buf);
-                    if (os == "Darwin") return true;
-                }
-            }
-            catch
-            {
-            }
-            finally
-            {
-                if (buf != IntPtr.Zero) Marshal.FreeHGlobal(buf);
-            }
-            return false;
-        }
-
         private static ModInfo GetDllInfo(FileInfo f)
         {
-            var assembly = Assembly.LoadFile(f.FullName);
+            var assembly = AssemblyDefinition.ReadAssembly(f.FullName);
             return loadModInfoFromAssembly(assembly);
         }
 
@@ -235,99 +152,59 @@ namespace VintageStory.ModPeek
             return null;
         }
 
-
-
-
-        private static ModInfo loadModInfoFromAssembly(Assembly assembly)
+        private static Mono.Cecil.CustomAttributeNamedArgument GetProperty(CustomAttribute customAttribute, string name)
         {
-            var modInfoAttr = assembly.GetCustomAttribute<ModInfoAttribute>();
-            if (modInfoAttr == null)
+            return customAttribute.Properties.SingleOrDefault(property => property.Name == name);
+        }
+
+        private static T GetPropertyValue<T>(CustomAttribute customAttribute, string name)
+        {
+            return (T) GetProperty(customAttribute, name).Argument.Value;
+		}
+
+		private static T[] GetPropertyValueArray<T>(CustomAttribute customAttribute, string name)
+		{
+            return (GetProperty(customAttribute, name).Argument.Value as CustomAttributeArgument[])?.Select(item => (T) item.Value).ToArray();
+		}
+
+		private static ModInfo loadModInfoFromAssembly(AssemblyDefinition assemblyDefinition)
+        {
+            var modInfoAttr = assemblyDefinition.CustomAttributes.SingleOrDefault(attribute => attribute.AttributeType.Name == "ModInfoAttribute");
+			if (modInfoAttr == null)
             {
                 return null;
             }
 
-            EnumAppSide side;
-            if (!Enum.TryParse(modInfoAttr.Side, true, out side))
+			string name = modInfoAttr.ConstructorArguments[0].Value as string;
+			string modID = modInfoAttr.ConstructorArguments[1].Value as string;
+
+			EnumAppSide side;
+            if (!Enum.TryParse(GetPropertyValue<string>(modInfoAttr, "Side"), true, out side))
             {
                 side = EnumAppSide.Universal;
             }
 
-            var dependencies = assembly
-                .GetCustomAttributes<ModDependencyAttribute>()
-                .Select(attr => new ModDependency(attr.ModID, attr.Version))
-                .ToList();
+			var dependencies = assemblyDefinition.CustomAttributes
+				.Where(attribute => attribute.AttributeType.Name == "ModDependencyAttribute")
+				.Select(attribute => new ModDependency((string) attribute.ConstructorArguments[0].Value, attribute.ConstructorArguments[1].Value as string))
+				.ToList();
 
 
-            ModInfo info = new ModInfo(
-                EnumModType.Code, modInfoAttr.Name, modInfoAttr.ModID, modInfoAttr.Version,
-                modInfoAttr.Description, modInfoAttr.Authors, modInfoAttr.Contributors, modInfoAttr.Website,
-                side, modInfoAttr.RequiredOnClient, modInfoAttr.RequiredOnServer, dependencies);
+			ModInfo info = new ModInfo(
+                EnumModType.Code, name, modID,
+                GetPropertyValue<string>(modInfoAttr, "Version"),
+				GetPropertyValue<string>(modInfoAttr, "Description"),
+                GetPropertyValueArray<string>(modInfoAttr, "Authors"),
+				GetPropertyValueArray<string>(modInfoAttr, "Contributors"),
+				GetPropertyValue<string>(modInfoAttr, "Website"),
+				side,
+				GetPropertyValue<bool?>(modInfoAttr, "RequiredOnClient").GetValueOrDefault(),
+				GetPropertyValue<bool?>(modInfoAttr, "RequiredOnServer").GetValueOrDefault(),
+                dependencies);
 
-            info.NetworkVersion = modInfoAttr.NetworkVersion;
+            info.NetworkVersion = GetPropertyValue<string>(modInfoAttr, "NetworkVersion");
 
             return info;
         }
-
-
-
-
-
-
-
-
-        private static Assembly AssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            try
-            {
-                string dllName = new AssemblyName(args.Name).Name + ".dll";
-
-                string basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-                string folderPath = Path.Combine(basePath, "Lib");
-
-
-                string assemblyPath = Path.Combine(folderPath, dllName);
-                if (File.Exists(assemblyPath))
-                {
-                    return Assembly.LoadFrom(assemblyPath);
-                }
-
-                assemblyPath = Path.Combine(basePath, dllName);
-
-                if (File.Exists(assemblyPath))
-                {
-                    return Assembly.LoadFrom(assemblyPath);
-                }
-
-                assemblyPath = Path.Combine(dataPathMods, dllName);
-
-                if (File.Exists(assemblyPath))
-                {
-                    return Assembly.LoadFrom(assemblyPath);
-                }
-
-                assemblyPath = Path.Combine(dataPathbinaries, dllName);
-
-                if (File.Exists(assemblyPath))
-                {
-                    return Assembly.LoadFrom(assemblyPath);
-                }
-
-                assemblyPath = Path.Combine(dataPathMods, dllName);
-
-                if (File.Exists(assemblyPath))
-                {
-                    return Assembly.LoadFrom(assemblyPath);
-                }
-
-                return null;
-
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Failed loading assembly " + args.Name, e);
-            }
-        }
-
     }
 }
