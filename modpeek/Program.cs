@@ -107,8 +107,8 @@ namespace VintageStory.ModPeek
 
         private static ModInfo GetDllInfo(byte[] bytes)
         {
-                var assembly = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes)); // no need to dispose here
-                return loadModInfoFromAssembly(assembly);
+            var assembly = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes)); // no need to dispose here
+            return loadModInfoFromAssembly(assembly);
         }
 
         private static ModInfo GetCsInfo(byte[] bytes)
