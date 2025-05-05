@@ -33,12 +33,11 @@ namespace VintageStory.ModPeek
 
             if (args.File == null)
             {
-                Console.Error.WriteLine("Missing file");
+                Console.Error.WriteLine("Missing file argument");
                 Environment.Exit(1);
                 return;
             }
 
-            ModInfo minfo;
 
             FileInfo f = new FileInfo(args.File);
             if (!f.Exists)
@@ -48,22 +47,7 @@ namespace VintageStory.ModPeek
                 return;
             }
 
-            switch (f.Extension)
-            {
-                case ".zip":
-                    minfo = GetZipInfo(f);
-                    break;
-                case ".cs":
-                    minfo = GetCsInfo(f);
-                    break;
-                case ".dll":
-                    minfo = GetDllInfo(f);
-                    break;
-                default:
-                    Console.Error.WriteLine("Invalid extension, must be zip, cs or dll");
-                    return;
-            }
-
+            ModInfo minfo = GetModInfo(f);
             if (minfo == null)
             {
                 Environment.Exit(1);
@@ -89,15 +73,48 @@ namespace VintageStory.ModPeek
             Environment.Exit(0);
         }
 
-        private static ModInfo GetDllInfo(FileInfo f)
+        private static ModInfo GetModInfo(FileInfo f)
         {
-            var assembly = AssemblyDefinition.ReadAssembly(f.FullName);
+            var bytes = File.ReadAllBytes(f.FullName);
+            if(bytes.Length < 4) {
+                Console.Error.WriteLine("File size below sensible (< 4 bytes).");
+                return null;
+            }
+
+            switch(f.Extension) {
+                case ".zip": return GetZipInfo(bytes);
+                case ".cs" : return GetCsInfo(bytes);
+                case ".dll": return GetDllInfo(bytes);
+            }
+
+            var magic = BitConverter.ToUInt32(bytes, 0);
+            //NOTE(Rennorb): The only byteswap intrinsic on this version of dotnet is System.Net.HostToNetwork and i don't want to import that.
+            if(BitConverter.IsLittleEndian) magic = ((magic >> 24) & 0x000000FF) | ((magic >> 8) & 0x0000FF00) | ((magic << 8) & 0x00FF0000) | ((magic << 24) & 0xFF000000);
+                
+            if(magic == 0x504B0304) return GetZipInfo(bytes);
+            //NOTE(Rennorb): Technically speaking this is the MS DOS header and is optional, but realistically every dll is going to have it.
+            if((magic & 0xffff0000) == 0x4D5A0000) return GetDllInfo(bytes);
+
+            var info = GetCsInfo(bytes);
+            if(info == null) {
+                Console.Error.WriteLine("Failed to determine file type from content, must be a\n" +
+                    "\tzip\t(containing 'modinfo.json'),\n" +
+                    "\tcs\t(containing a '[assembly: ModInfo(...)]' attribute) or\n" +
+                    "\tdll\t(containing a '[assembly: ModInfo(...)]' attribute).");
+            }
+            return info;
+        }
+
+        private static ModInfo GetDllInfo(byte[] bytes)
+        {
+            var assembly = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes)); // no need to dispose here
             return loadModInfoFromAssembly(assembly);
         }
 
-        private static ModInfo GetCsInfo(FileInfo f)
+        private static ModInfo GetCsInfo(byte[] bytes)
         {
-            string text = File.ReadAllText(f.FullName);
+            var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true); // no need to dispose here
+            string text = reader.ReadToEnd();
 
             /*[assembly: ModInfo("StepUp", Version = "1.2.0", Side = "Client",
 	Description = "Doubles players' step height to allow stepping up full blocks",
@@ -125,11 +142,11 @@ namespace VintageStory.ModPeek
         }
 
 
-        private static ModInfo GetZipInfo(FileInfo f)
+        private static ModInfo GetZipInfo(byte[] bytes)
         {
             try
             {
-                using (var zip = ZipFile.OpenRead(f.FullName))
+                using (var zip = new ZipArchive(new MemoryStream(bytes)))
                 {
                     var entry = zip.GetEntry("modinfo.json");
                     if (entry != null)
