@@ -16,10 +16,10 @@ public static partial class ModPeek
         void PrintUsage()
         {
             Console.Error.Write(
-$@"ModPeek.exe - extract information from VintageStory mod files:
+$@"modpeek.exe - extract information from VintageStory mod files:
 
 Synopsis:
-	ModPeek.exe [-i] [-p] [-f] input
+	modpeek.exe [-i] [-p] [-f] input
 
 Options:
 	-f file, --file file:
