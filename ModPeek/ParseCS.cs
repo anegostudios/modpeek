@@ -8,18 +8,7 @@ namespace VintageStory.ModPeek;
 
 static partial class ModPeek
 {
-
-    /*
-    [assembly: ModInfo("StepUp", Version = "1.2.0", Side = "Client",
-        Description = "Doubles players' step height to allow stepping up full blocks",
-        Website = "https://www.vintagestory.at/forums/topic/3349-stepup-v120/",
-        Authors = new []{ "copygirl" }
-    )]
-    */
-
-    //NOTE(Rennorb): This is still not perfect and will get tripped up on things like additional assembly attributes in comments.
-    // The only way to properly do this parsing would be to tokenize the file and do it based on the ast representation.
-    // Nevertheless, this is a lot better than the previous version.
+    // See tests for examples of the attributes we are trying to parse.
     static bool TryGetCsInfo(byte[] bytes, out ModInfo? modInfo, Action<Error> errorCallback)
     {
         var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true); // no need to dispose here

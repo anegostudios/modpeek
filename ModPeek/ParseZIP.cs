@@ -7,6 +7,7 @@ namespace VintageStory.ModPeek;
 
 static partial class ModPeek
 {
+    // See tests for examples of the attributes we are trying to parse.
     static bool TryGetZipInfo(byte[] bytes, out ModInfo? modInfo, Action<Error> errorCallback)
     {
         try
