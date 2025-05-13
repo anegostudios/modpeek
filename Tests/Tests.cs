@@ -18,6 +18,15 @@ public class Tests
 			Side             = EnumAppSide.Universal,
 			RequiredOnClient = true,
 		},
+		["FarmlandDropsWithNutrients.dll"] = new ModInfo() {
+			Type             = EnumModType.Code,
+			ModID            = "farmlanddropswithnutrients",
+			Name             = "Farmland Drops With Nutrients",
+			Description      = "Pick up and and place farmland while preserving nutrients",
+			Version          = "1.1.1",
+			Authors          = [ "jayugg" ],
+			Side             = EnumAppSide.Universal,
+		},
 		["jtraits_0.2.6.zip"] = new ModInfo() {
 			Type         = EnumModType.Content,
 			ModID        = "jtraits",
@@ -130,6 +139,7 @@ public class Tests
 
 	[TestMethod]
 	[DataRow("Bee_Keeper_v1.1.0.zip")]
+	[DataRow("FarmlandDropsWithNutrients.dll")]
 	[DataRow("Recycle Metalwörk_v1.0.3.zip")]
 	[DataRow("tailoringforall.zip")]
 	[DataRow("Waxpress_1.0.0.zip")]
