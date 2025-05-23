@@ -9,7 +9,7 @@ namespace VintageStory.ModPeek;
 static partial class ModPeek
 {
     // See tests for examples of the attributes we are trying to parse.
-    static bool TryGetCsInfo(byte[] bytes, out ModInfo? modInfo, Action<Error> errorCallback)
+    static bool TryGetCsInfo(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true); // no need to dispose here
         var sourceText = SourceText.From(reader, bytes.Length);
@@ -28,7 +28,7 @@ static partial class ModPeek
                     case "ModInfo":
                     case nameof(ModInfoAttribute): {
                         if(attribute.ArgumentList == null || attribute.ArgumentList.Arguments.Count == 0) {
-                            errorCallback(Errors.MissingRequiredProperty(nameof(ModInfoAttribute), nameof(ModInfoAttribute.Name)));
+                            errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfoAttribute), nameof(ModInfoAttribute.Name)));
                             error = true;
                             break;
                         }
@@ -36,7 +36,7 @@ static partial class ModPeek
                         var attrArgs = attribute.ArgumentList.Arguments;
                         
                         if(!TryParseString(attrArgs[0].Expression, out modInfo.Name)) {
-                            errorCallback(Errors.PrimitiveParsingFailure(attrArgs[0].Expression.ToString(), "string", nameof(ModInfoAttribute.Name)));
+                            errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Name), "string", attrArgs[0].Expression.ToString()));
                             error = true;
                         }
 
@@ -47,7 +47,7 @@ static partial class ModPeek
 
                         if (attrArgs[1].NameEquals == null) {
                             if (!TryParseString(attrArgs[1].Expression, out var modID)) {
-                                errorCallback(Errors.PrimitiveParsingFailure(attrArgs[1].Expression.ToString(), "string", nameof(ModInfoAttribute.ModID)));
+                                errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.ModID), "string", attrArgs[1].Expression.ToString()));
                                 error = true;
                             }
                             else {
@@ -63,27 +63,27 @@ static partial class ModPeek
                             switch (propName) {
                                 case nameof(ModInfoAttribute.Version):
                                     if (!TryParseString(propValueExpr, out modInfo.Version)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string", nameof(ModInfoAttribute.Version)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Version), "string", propValueExpr.ToString()));
                                         error = true;
                                     }
                                     break;
 
                                 case nameof(ModInfoAttribute.NetworkVersion):
                                     if (!TryParseString(propValueExpr, out modInfo.NetworkVersion)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string", nameof(ModInfoAttribute.NetworkVersion)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.NetworkVersion), "string", propValueExpr.ToString()));
                                         error = true;
                                     }
                                     break;
 
                                 case nameof(ModInfoAttribute.Side): {
                                     if (!TryParseString(propValueExpr, out var sideStr)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string", nameof(ModInfoAttribute.Side)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Side), "string", propValueExpr.ToString()));
                                         error = true;
                                         break;
                                     }
 
                                     if (!Enum.TryParse(sideStr, true, out EnumAppSide side)) {
-                                        errorCallback(Errors.StringParsingFailure(propValueExpr.ToString(), nameof(EnumAppSide), nameof(ModInfoAttribute.Side)));
+                                        errorCallback(new Errors.StringParsingFailure(nameof(ModInfoAttribute.Side), nameof(EnumAppSide), propValueExpr.ToString()));
                                         error = true;
                                         break;
                                     }
@@ -93,7 +93,7 @@ static partial class ModPeek
 
                                 case nameof(ModInfoAttribute.RequiredOnClient): {
                                     if (!TryParseBoolean(propValueExpr, out var requiredOnClient)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "boolean", nameof(ModInfoAttribute.RequiredOnClient)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.RequiredOnClient), "boolean", propValueExpr.ToString()));
                                         error = true;
                                         break;
                                     }
@@ -103,7 +103,7 @@ static partial class ModPeek
 
                                 case nameof(ModInfoAttribute.RequiredOnServer): {
                                     if (!TryParseBoolean(propValueExpr, out var requiredOnServer)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "boolean", nameof(ModInfoAttribute.RequiredOnServer)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.RequiredOnServer), "boolean", propValueExpr.ToString()));
                                         error = true;
                                         break;
                                     }
@@ -113,14 +113,14 @@ static partial class ModPeek
 
                                 case nameof(ModInfoAttribute.Description):
                                     if (!TryParseString(propValueExpr, out modInfo.Description)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string", nameof(ModInfoAttribute.Description)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Description), "string", propValueExpr.ToString()));
                                         error = true;
                                     }
                                     break;
 
                                 case nameof(ModInfoAttribute.Website):
                                     if (!TryParseString(propValueExpr, out modInfo.Website)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string", nameof(ModInfoAttribute.Website)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Website), "string", propValueExpr.ToString()));
                                         error = true;
                                     }
                                     break;
@@ -131,7 +131,7 @@ static partial class ModPeek
 
                                 case nameof(ModInfoAttribute.WorldConfig):
                                     if (!TryParseString(propValueExpr, out var _)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string", nameof(ModInfoAttribute.WorldConfig)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.WorldConfig), "string", propValueExpr.ToString()));
                                         error = true;
                                     }
                                     //TODO(Rennorb) @completeness: I am unsure what this is supposed to do or where to store it.
@@ -139,7 +139,7 @@ static partial class ModPeek
 
                                 case nameof(ModInfoAttribute.Authors): {
                                     if (!TryParseArrayInitializer(propValueExpr, out var initializer)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string array", nameof(ModInfoAttribute.Authors)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Authors), "string array", propValueExpr.ToString()));
                                         error = true;
                                     }
 
@@ -147,7 +147,7 @@ static partial class ModPeek
                                     int j = 0;
                                     foreach (var elementExpression in initializer!.Expressions) {
                                         if (!TryParseString(elementExpression, out var author)) {
-                                            errorCallback(Errors.PrimitiveParsingFailure(elementExpression.ToString(), "string", $"{nameof(ModInfoAttribute.Authors)}[{j}]"));
+                                            errorCallback(new Errors.PrimitiveParsingFailure($"{nameof(ModInfoAttribute.Authors)}[{j}]", "string", elementExpression.ToString()));
                                         }
                                         else {
                                             authors.Add(author!);
@@ -159,7 +159,7 @@ static partial class ModPeek
 
                                 case nameof(ModInfoAttribute.Contributors): {
                                     if (!TryParseArrayInitializer(propValueExpr, out var initializer)) {
-                                        errorCallback(Errors.PrimitiveParsingFailure(propValueExpr.ToString(), "string array", nameof(ModInfoAttribute.Contributors)));
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Contributors), "string array", propValueExpr.ToString()));
                                         error = true;
                                     }
 
@@ -167,7 +167,7 @@ static partial class ModPeek
                                     int j = 0;
                                     foreach (var elementExpression in initializer!.Expressions) {
                                         if (!TryParseString(elementExpression, out var contributor)) {
-                                            errorCallback(Errors.PrimitiveParsingFailure(elementExpression.ToString(), "string", $"{nameof(ModInfoAttribute.Contributors)}[{j}]"));
+                                            errorCallback(new Errors.PrimitiveParsingFailure($"{nameof(ModInfoAttribute.Contributors)}[{j}]", "string", elementExpression.ToString()));
                                         }
                                         else {
                                             contributors.Add(contributor!);
@@ -178,7 +178,7 @@ static partial class ModPeek
                                 } break;
 
                                 default:
-                                    errorCallback(Errors.UnexpectedProperty(propName, propValueExpr.ToString()));
+                                    errorCallback(new Errors.UnexpectedProperty(propName, propValueExpr.ToString()));
                                     error = true;
                                     break;
                             }
@@ -189,7 +189,7 @@ static partial class ModPeek
                     case "ModDependency":
                     case nameof(ModDependencyAttribute): {
                         if(attribute.ArgumentList == null || attribute.ArgumentList.Arguments.Count == 0) {
-                            errorCallback(Errors.MissingRequiredProperty($"{nameof(ModDependencyAttribute)}[@{attribute.GetLocation()}]", nameof(ModDependencyAttribute.ModID)));
+                            errorCallback(new Errors.MissingRequiredProperty($"{nameof(ModDependencyAttribute)}[@{attribute.GetLocation()}]", nameof(ModDependencyAttribute.ModID)));
                             error = true;
                             break;
                         }
@@ -197,13 +197,13 @@ static partial class ModPeek
                         var attrArgs = attribute.ArgumentList.Arguments;
                         
                         if(!TryParseString(attrArgs[0].Expression, out var depName)) {
-                            errorCallback(Errors.PrimitiveParsingFailure(attrArgs[0].Expression.ToString(), "string", $"{nameof(ModDependencyAttribute)}[@{attribute.GetLocation()}]{nameof(ModDependencyAttribute.ModID)}"));
+                            errorCallback(new Errors.PrimitiveParsingFailure($"{nameof(ModDependencyAttribute)}[@{attribute.GetLocation()}]{nameof(ModDependencyAttribute.ModID)}", "string", attrArgs[0].Expression.ToString()));
                             error = true;
                         }
 
                         string? depVersion = null;
                         if(attrArgs.Count > 1 && !TryParseString(attrArgs[1].Expression, out depVersion)) {
-                            errorCallback(Errors.PrimitiveParsingFailure(attrArgs[1].Expression.ToString(), "string", $"{nameof(ModDependencyAttribute)}[@{attribute.GetLocation()}]{nameof(ModDependencyAttribute.Version)}"));
+                            errorCallback(new Errors.PrimitiveParsingFailure($"{nameof(ModDependencyAttribute)}[@{attribute.GetLocation()}]{nameof(ModDependencyAttribute.Version)}", "string", attrArgs[1].Expression.ToString()));
                             error = true;
                         }
 
@@ -216,7 +216,7 @@ static partial class ModPeek
         }
 
         if (modInfo == null) {
-            errorCallback(Errors.MissingAssemblyAttribute("ModInfo"));
+            errorCallback(new Errors.MissingAssemblyAttribute("ModInfo"));
             return false;
         }
 

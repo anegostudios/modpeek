@@ -3,9 +3,6 @@ using Vintagestory.API.Common;
 using System.Runtime.Serialization;
 using System.Reflection;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using Newtonsoft.Json.Linq;
-
 
 namespace VintageStory.ModPeek;
 
@@ -125,7 +122,7 @@ Operands:
         Environment.Exit(error ? 1 : 0);
     }
 
-    public static bool TryGetModInfo(FileInfo f, out ModInfo? modInfo, Action<Error> errorCallback)
+    public static bool TryGetModInfo(FileInfo f, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         var bytes = File.ReadAllBytes(f.FullName);
         if (bytes.Length < 4) {
@@ -162,12 +159,12 @@ Operands:
 
     /// <summary>Validates the data inside a ModInfo and sets invalid fields to blank / default values.</summary>
     /// <returns>False if any data is invalid.</returns>
-    public static bool ValidateModInfo(ModInfo modInfo, Action<Error> errorCallback)
+    public static bool ValidateModInfo(ModInfo modInfo, Action<Errors.Error> errorCallback)
     {
         var error = false;
             
         if (string.IsNullOrWhiteSpace(modInfo.Name)) {
-            errorCallback(Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.Name)));
+            errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.Name)));
             error = true;
             modInfo.Name = null;
         }
@@ -178,19 +175,19 @@ Operands:
                     modInfo.ModID = ModInfo.ToModID(modInfo.Name);
                 }
                 catch (ArgumentException e) {
-                    errorCallback(Errors.ModIDGenerationFailure(e, modInfo.Name!));
+                    errorCallback(new Errors.ModIDGenerationFailure(e, modInfo.Name!));
                     modInfo.ModID = null;
                     error = true;
                 }
             }
             else {
-                errorCallback(Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.ModID)));
+                errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.ModID)));
                 modInfo.ModID = null;
                 error = true;
             }
         }
         else if (!ModInfo.IsValidModID(modInfo.ModID)) {
-            errorCallback(Errors.MalformedModID(modInfo.ModID, nameof(modInfo.ModID), Errors.Severity.Fatal));
+            errorCallback(new Errors.MalformedPrimaryModID(modInfo.ModID));
             error = true;
             modInfo.ModID = null;
         }
@@ -200,7 +197,7 @@ Operands:
         }
         else {
             if (!IsValidVersion(modInfo.Version)) {
-                errorCallback(Errors.MalformedVersion(modInfo.Version, nameof(modInfo.Version)));
+                errorCallback(new Errors.MalformedPrimaryVersion(modInfo.Version));
                 error = true;
                 modInfo.Version = null;
             }
@@ -211,14 +208,14 @@ Operands:
         }
         else {
             if (!IsValidVersion(modInfo.NetworkVersion)) {
-                errorCallback(Errors.MalformedVersion(modInfo.NetworkVersion, nameof(modInfo.NetworkVersion)));
+                errorCallback(new Errors.MalformedNetworkVersion(modInfo.NetworkVersion));
                 error = true;
                 modInfo.NetworkVersion = null;
             }
         }
 
         if (!Enum.IsDefined(typeof(EnumModType), modInfo.Type)) {
-            errorCallback(Errors.UnexpectedValue(modInfo.Type.ToString(), nameof(EnumModType), nameof(modInfo.Type)));
+            errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Type), nameof(EnumModType), modInfo.Type.ToString()));
             error = true;
             // Code probably the one wit the highest security restrictions, so we pick this one as a fallback.
             // We don't have a neutral default.
@@ -226,7 +223,7 @@ Operands:
         }
 
         if (!Enum.IsDefined(typeof(EnumAppSide), modInfo.Side)) {
-            errorCallback(Errors.UnexpectedValue(modInfo.Side.ToString(), nameof(EnumAppSide), nameof(modInfo.Side)));
+            errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Side), nameof(EnumAppSide), modInfo.Side.ToString()));
             error = true;
             modInfo.Side = 0;
         }
@@ -239,7 +236,7 @@ Operands:
                 _ = new Uri(modInfo.Website);
             }
             catch {
-                errorCallback(Errors.StringParsingFailure(modInfo.Website, "URL", nameof(modInfo.Website)));
+                errorCallback(new Errors.StringParsingFailure(nameof(modInfo.Website), "URL", modInfo.Website));
                 modInfo.Website = null;
                 error = true;
             }
@@ -250,7 +247,7 @@ Operands:
             var author = authors[i];
             foreach(var c in author) {
                 if(c == '\n' || c == '\r') {
-                    errorCallback(Errors.MalformedAuthorName(author));
+                    errorCallback(new Errors.MalformedAuthorName(author));
                     error = true;
                     authors.RemoveAt(i);
                     break;
@@ -264,7 +261,7 @@ Operands:
             var contributor = contributors[i];
             foreach(var c in contributor) {
                 if(c == '\n' || c == '\r') {
-                    errorCallback(Errors.MalformedContributorName(contributor));
+                    errorCallback(new Errors.MalformedContributorName(contributor));
                     error = true;
                     contributors.RemoveAt(i);
                     break;
@@ -277,13 +274,13 @@ Operands:
         for (int i = dependencies.Count - 1; i >= 0; i--) {
             var dependency = dependencies[i];
             if (string.IsNullOrWhiteSpace(dependency.ModID)) {
-                errorCallback(Errors.MissingDependencyModID());
+                errorCallback(new Errors.MissingDependencyModID());
                 error = true;
                 dependencies.RemoveAt(i);
                 continue;
             }
             if (!ModInfo.IsValidModID(dependency.ModID)) {
-                errorCallback(Errors.MalformedDependencyModID(dependency.ModID));
+                errorCallback(new Errors.MalformedDependencyModID(dependency.ModID));
                 dependencies.RemoveAt(i);
                 error = true;
                 continue;
@@ -294,7 +291,7 @@ Operands:
                 s_versionProp!.SetValue(dependency, null); // unify the value
             }
             else if (!IsValidVersion(dependency.Version)) {
-                errorCallback(Errors.MalformedDependencyVersion(dependency.Version, dependency.ModID));
+                errorCallback(new Errors.MalformedDependencyVersion(dependency.ModID, dependency.Version));
                 error = true;
                 dependencies.RemoveAt(i);
                 continue;
@@ -339,215 +336,36 @@ Operands:
         return dep;
     }
 
-    static void PrintErrorToStdError(Error error)
+    static void PrintErrorToStdError(Errors.Error error)
     {
         Console.Error.WriteLine(FormatError(error));
     }
 
-    public static string FormatError(Error error)
+    public static string FormatError(Errors.Error error)
     {
-        return error.Kind switch {
-            Errors.Kind.MalformedArchive           => $"The zip archive failed to decode: {error.MalformedArchive.Exception.Message}.",
-            Errors.Kind.MissingFileInArchiveRoot   => $"The zip archive is missing a file named {error.MissingFileInArchiveRoot.FileName} in its root."+
-                (error.MissingFileInArchiveRoot.LikelyCompressedDirectory ? " All files in the archive share a common parent directory, so you likely compressed a directory instead of individual files." : ""),
-            Errors.Kind.MalformedJson              => $"The provided modinfo.json was malformed: {error.MalformedJson.Exception.Message}.",
-            Errors.Kind.UnexpectedJsonRootType     => $"The root element of the modinfo.json must be a {error.UnexpectedJsonPropertyType.Expected}, but was {error.UnexpectedJsonPropertyType.Given.Type}.",
-            Errors.Kind.MissingAssemblyAttribute   => $"Missing expected assembly-attribute '{error.MissingAssemblyAttribute.AttributeName}'.",
-            Errors.Kind.PrimitiveParsingFailure    => $"The {error.ParsingFailure.TargetProperty} property failed to parse as a {error.ParsingFailure.ExpectedType} (was '{error.ParsingFailure.MalformedInput}').",
-            Errors.Kind.StringParsingFailure       => $"The {error.ParsingFailure.TargetProperty} property failed to convert from a string to {error.ParsingFailure.ExpectedType} (was '{error.ParsingFailure.MalformedInput}').",
-            Errors.Kind.MissingRequiredProperty    => $"{error.MissingRequiredProperty.TargetStructure} is missing the required property '{error.MissingRequiredProperty.PropertyName}'.",
-            Errors.Kind.UnexpectedProperty         => $"Unexpected property '{error.UnexpectedProperty.PropertyName}' with value '{error.UnexpectedProperty.PropertyValue}'.",
-            Errors.Kind.UnexpectedValue            => $"Property '{error.UnexpectedValue.TargetProperty}' was expected to be {error.UnexpectedValue.Expected}, but was '{error.UnexpectedValue.Given}'.",
-            Errors.Kind.UnexpectedJsonPropertyType => $"Property '{error.UnexpectedJsonPropertyType.TargetProperty}' was expected to be of type {error.UnexpectedJsonPropertyType.Expected}, but was '{error.UnexpectedJsonPropertyType.Given.ToString(Newtonsoft.Json.Formatting.None)}'.",
-            Errors.Kind.MalformedModID             => $"The {error.MalformedModID.TargetProperty} property contains a malformed ModID ('{error.MalformedModID.MalformedInput}').",
-            Errors.Kind.MalformedVersion           => $"The {error.MalformedVersion.TargetProperty} property contains a malformed Version ('{error.MalformedVersion.MalformedInput}').",
-            Errors.Kind.ModIDGenerationFailure     => $"Mod name '{error.ModIDGenerationFailure.MalformedInput}' failed to be converted to a ModID: {error.ModIDGenerationFailure.Exception}.",
-            Errors.Kind.MissingDependencyModID     => $"A dependency was specified that does not have target ModID set.",
-            Errors.Kind.MalformedDependencyModID   => $"{error.MalformedModID.TargetProperty} specifies a malformed ModID.",
-            Errors.Kind.MalformedDependencyVersion => $"{error.MalformedVersion.TargetProperty} specifies a malformed target Version ('{error.MalformedVersion.MalformedInput}').",
-            Errors.Kind.MalformedAuthorName        => $"'{error.MalformedAuthorName.MalformedInput}' is not a valid author name.",
-            Errors.Kind.MalformedContributorName   => $"'{error.MalformedContributorName.MalformedInput}' is not a valid contributor name.",
-            _ => "Unknown error: " + error.Kind,
+        return error switch {
+            Errors.MalformedArchive           err => $"The zip archive failed to decode: {err.Exception.Message}.",
+            Errors.MissingFileInArchiveRoot   err => $"The zip archive is missing a file named {err.FileName} in its root."+
+                (err.LikelyCompressedDirectory ? " All files in the archive share a common parent directory, so you likely compressed a directory instead of individual files." : ""),
+            Errors.MalformedJson              err => $"The provided modinfo.json was malformed: {err.Exception.Message}.",
+            Errors.UnexpectedJsonRootType     err => $"The root element of the modinfo.json must be a {err.ExpectedType}, but was {err.Given.Type}.",
+            Errors.MissingAssemblyAttribute   err => $"Missing expected assembly-attribute '{err.AttributeName}'.",
+            Errors.PrimitiveParsingFailure    err => $"The {err.TargetProperty} property failed to parse as a {err.ExpectedType} (was '{err.MalformedInput}').",
+            Errors.StringParsingFailure       err => $"The {err.TargetProperty} property failed to convert from a string to {err.ExpectedType} (was '{err.MalformedInput}').",
+            Errors.MissingRequiredProperty    err => $"{err.TargetStructure} is missing the required property '{err.PropertyName}'.",
+            Errors.UnexpectedProperty         err => $"Unexpected property '{err.PropertyName}' with value '{err.PropertyValue}'.",
+            Errors.UnexpectedValue            err => $"Property '{err.TargetProperty}' was expected to be {err.Expected}, but was '{err.Given}'.",
+            Errors.UnexpectedJsonPropertyType err => $"Property '{err.TargetProperty}' was expected to be of type {err.ExpectedType}, but was '{err.Given.ToString(Newtonsoft.Json.Formatting.None)}'.",
+            Errors.MalformedPrimaryModID      err => $"The ModID of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.MalformedPrimaryVersion    err => $"The Version of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.MalformedNetworkVersion    err => $"The NetworkVersion of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.ModIDGenerationFailure     err => $"Mod name '{err.MalformedInput}' failed to be converted to a ModID: {err.Exception}.",
+            Errors.MissingDependencyModID         => $"A dependency was specified that does not have target ModID set.",
+            Errors.MalformedDependencyModID   err => $"Dependency '{err.MalformedInput}' specifies a malformed ModID.",
+            Errors.MalformedDependencyVersion err => $"Dependency '{err.Dependency}' specifies a malformed target Version ('{err.MalformedInput}').",
+            Errors.MalformedAuthorName        err => $"'{err.MalformedInput}' is not a valid author name.",
+            Errors.MalformedContributorName   err => $"'{err.MalformedInput}' is not a valid contributor name.",
+            _ => $"Unknown error of severity {error.Severity}: {error}."
         };
     }
-}
-
-
-//NOTE(Rennorb): These TryParse and Validate functions don't fast-fail, instead they report every warning they can detect.
-// We do this so that we are able to report all warnings at once, and a user doesn't have to go though multiple cycles of 
-// validating if there are multiple issues with the ModInfo.
-
-[StructLayout(LayoutKind.Explicit)]
-public struct Error(Errors.Severity severity, Errors.Kind kind) {
-    [FieldOffset(0)] public Errors.Severity Severity = severity;
-    [FieldOffset(1)] public Errors.Kind     Kind     = kind;
-
-
-    [FieldOffset(8)] public _MalformedArchive MalformedArchive;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MalformedArchive
-    {
-        public Exception Exception;
-    }
-
-    [FieldOffset(8)] public _MalformedJson MalformedJson;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MalformedJson
-    {
-        public Exception Exception;
-    }
-
-    [FieldOffset(8)] public _MissingAssemblyAttribute MissingAssemblyAttribute;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MissingAssemblyAttribute
-    {
-        public string AttributeName;
-    }
-
-    [FieldOffset(8)] public _MissingFileInArchiveRoot MissingFileInArchiveRoot;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MissingFileInArchiveRoot
-    {
-        public string FileName;
-        object _pad1;
-        object _pad2;
-        public bool   LikelyCompressedDirectory;
-    }
-
-    [FieldOffset(8)] public _ParsingFailure ParsingFailure;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _ParsingFailure
-    {
-        public string MalformedInput;
-        public string ExpectedType;
-        public string TargetProperty;
-    }
-
-    [FieldOffset(8)] public _MissingRequiredProperty MissingRequiredProperty;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MissingRequiredProperty
-    {
-        public string TargetStructure;
-        public string PropertyName;
-    }
-
-    [FieldOffset(8)] public _UnexpectedProperty UnexpectedProperty;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _UnexpectedProperty
-    {
-        public string PropertyName;
-        public string PropertyValue;
-    }
-
-    [FieldOffset(8)] public _UnexpectedValue UnexpectedValue;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _UnexpectedValue
-    {
-        public string Given;
-        public string Expected;
-        public string TargetProperty;
-    }
-
-    [FieldOffset(8)] public _UnexpectedJsonPropertyType UnexpectedJsonPropertyType;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _UnexpectedJsonPropertyType
-    {
-        public JToken     Given;
-        public string     TargetProperty;
-        object _pad; // just a fix for wired alignment behavior
-        public JTokenType Expected;
-    }
-
-    [FieldOffset(8)] public _MalformedModID MalformedModID;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MalformedModID
-    {
-        public string MalformedInput;
-        public string TargetProperty;
-    }
-
-    [FieldOffset(8)] public _MalformedVersion MalformedVersion;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MalformedVersion
-    {
-        public string MalformedInput;
-        public string TargetProperty;
-    }
-
-    [FieldOffset(8)] public _ModIDGenerationFailure ModIDGenerationFailure;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _ModIDGenerationFailure
-    {
-        public Exception Exception;
-        public string MalformedInput;
-    }
-
-    [FieldOffset(8)] public _MalformedAuthorName MalformedAuthorName;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MalformedAuthorName
-    {
-        public string MalformedInput;
-    }
-
-    [FieldOffset(8)] public _MalformedContributorName MalformedContributorName;
-    [StructLayout(LayoutKind.Sequential)]
-    public struct _MalformedContributorName
-    {
-        public string MalformedInput;
-    }
-}
-
-public static class Errors
-{
-    public enum Severity : byte { Fatal, Warning }
-    public enum Kind : byte {
-        MalformedArchive,
-        MissingFileInArchiveRoot,
-
-        MalformedJson,
-        UnexpectedJsonRootType,
-
-        MissingAssemblyAttribute,
-
-        /// <summary> Can occur when a document gets parsed into primitive types. </summary>
-        PrimitiveParsingFailure,
-        /// <summary> Can occur when a string gets parsed into a different type. </summary>
-        StringParsingFailure,
-
-        MissingRequiredProperty,
-        UnexpectedProperty,
-        UnexpectedValue,
-        UnexpectedJsonPropertyType,
-
-        MalformedModID,
-        MalformedVersion,
-        ModIDGenerationFailure,
-
-        MissingDependencyModID,
-        MalformedDependencyModID,
-        MalformedDependencyVersion,
-
-        MalformedAuthorName,
-        MalformedContributorName,
-    }
-
-    public static Error MalformedArchive(Exception exception) => new(Severity.Fatal, Kind.MalformedArchive) { MalformedArchive = { Exception = exception } };
-    public static Error MalformedJson(Exception exception) => new(Severity.Fatal, Kind.MalformedJson) { MalformedJson = { Exception = exception } };
-    public static Error UnexpectedJsonRootType(JToken given, JTokenType expected) => new(Severity.Fatal, Kind.UnexpectedJsonRootType) { UnexpectedJsonPropertyType = { Given = given, Expected = expected, TargetProperty = "<root>" } };
-    public static Error MissingAssemblyAttribute(string missingAttributeName) => new(Severity.Fatal, Kind.MissingAssemblyAttribute) { MissingAssemblyAttribute = { AttributeName = missingAttributeName } };
-    public static Error MissingFileInArchiveRoot(string missingFileName, bool likelyCompressedDirectory) => new(Severity.Fatal, Kind.MissingFileInArchiveRoot) { MissingFileInArchiveRoot = { FileName = missingFileName, LikelyCompressedDirectory = likelyCompressedDirectory } };
-    public static Error PrimitiveParsingFailure(string malformedInput, string expectedType, string targetProperty) => new(Severity.Warning, Kind.PrimitiveParsingFailure) { ParsingFailure = { MalformedInput = malformedInput, ExpectedType = expectedType, TargetProperty = targetProperty } };
-    public static Error StringParsingFailure(string malformedInput, string expectedType, string targetProperty) => new(Severity.Warning, Kind.StringParsingFailure) { ParsingFailure = { MalformedInput = malformedInput, ExpectedType = expectedType, TargetProperty = targetProperty } };
-    public static Error MissingRequiredProperty(string targetStructure, string propertyName) => new(Severity.Fatal, Kind.MissingRequiredProperty) { MissingRequiredProperty = { TargetStructure = targetStructure, PropertyName = propertyName } };
-    public static Error UnexpectedProperty(string propertyName, string propertyValue) => new(Severity.Warning, Kind.UnexpectedProperty) { UnexpectedProperty = { PropertyName = propertyName, PropertyValue = propertyValue } };
-    public static Error UnexpectedValue(string given, string expected, string targetProperty) => new(Severity.Warning, Kind.UnexpectedValue) { UnexpectedValue = { Given = given, Expected = expected, TargetProperty = targetProperty } };
-    public static Error UnexpectedJsonPropertyType(JToken given, JTokenType expected, string targetProperty) => new(Severity.Warning, Kind.UnexpectedJsonPropertyType) { UnexpectedJsonPropertyType = { Given = given, Expected = expected, TargetProperty = targetProperty } };
-    public static Error MalformedModID(string malformedInput, string targetProperty, Severity severity) => new(severity, Kind.MalformedModID) { MalformedModID = { MalformedInput = malformedInput, TargetProperty = targetProperty } };
-    public static Error MalformedVersion(string malformedInput, string targetProperty) => new(Severity.Warning, Kind.MalformedVersion) { MalformedVersion = { MalformedInput = malformedInput, TargetProperty = targetProperty } };
-    public static Error ModIDGenerationFailure(Exception exception, string malformedInput) => new(Severity.Fatal, Kind.ModIDGenerationFailure) { ModIDGenerationFailure = { Exception = exception, MalformedInput = malformedInput } };
-    public static Error MissingDependencyModID() => new(Severity.Warning, Kind.MissingDependencyModID) { };
-    public static Error MalformedDependencyModID(string malformedInput) => new(Severity.Warning, Kind.MalformedDependencyModID) { MalformedModID = { MalformedInput = malformedInput, TargetProperty = $"{nameof(ModInfo.Dependencies)}[{malformedInput}]" } };
-    public static Error MalformedDependencyVersion(string malformedInput, string targetDependency) => new(Severity.Warning, Kind.MalformedDependencyVersion) { MalformedVersion = { MalformedInput = malformedInput, TargetProperty = $"{nameof(ModInfo.Dependencies)}[{targetDependency}]" } };
-    public static Error MalformedAuthorName(string malformedInput) => new(Severity.Warning, Kind.MalformedAuthorName) { MalformedAuthorName = { MalformedInput = malformedInput } };
-    public static Error MalformedContributorName(string malformedInput) => new(Severity.Warning, Kind.MalformedContributorName) { MalformedContributorName = { MalformedInput = malformedInput } };
 }

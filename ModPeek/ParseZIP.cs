@@ -8,7 +8,7 @@ namespace VintageStory.ModPeek;
 static partial class ModPeek
 {
     // See tests for examples of the attributes we are trying to parse.
-    static bool TryGetZipInfo(byte[] bytes, out ModInfo? modInfo, Action<Error> errorCallback)
+    static bool TryGetZipInfo(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         try
         {
@@ -32,7 +32,7 @@ static partial class ModPeek
                         break;
                     }
                 }
-                errorCallback(Errors.MissingFileInArchiveRoot("modinfo.json", commonPathPrefix != null));
+                errorCallback(new Errors.MissingFileInArchiveRoot("modinfo.json", commonPathPrefix != null));
                 modInfo = null;
                 return false;
             }
@@ -44,23 +44,23 @@ static partial class ModPeek
                 return TryParseJsonCaseInsensitive(root, out modInfo, errorCallback);
             }
             catch(Exception e) {
-                errorCallback(Errors.MalformedJson(e));
+                errorCallback(new Errors.MalformedJson(e));
                 modInfo = null;
                 return false;
             }
         }
         catch (Exception e)
         {
-            errorCallback(Errors.MalformedArchive(e));
+            errorCallback(new Errors.MalformedArchive(e));
             modInfo = null;
             return false;
         }
     }
 
-    static bool TryParseJsonCaseInsensitive(JToken root, out ModInfo? modInfo, Action<Error> errorCallback)
+    static bool TryParseJsonCaseInsensitive(JToken root, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         if(root.Type != JTokenType.Object) {
-            errorCallback(Errors.UnexpectedJsonRootType(root, JTokenType.Object));
+            errorCallback(new Errors.UnexpectedJsonRootType(JTokenType.Object, root));
             Console.Error.WriteLine($"The root json node must be an object, but was a {root.Type}.");
             modInfo = null;
             return false;
@@ -74,7 +74,7 @@ static partial class ModPeek
                 //NOTE(Rennorb) Cannot apply ToLower to nameof while keeping it const, so i have to manually specify these names...
                 case "name":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.Name)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Name), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
@@ -84,7 +84,7 @@ static partial class ModPeek
 
                 case "modid":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.ModID)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.ModID), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
@@ -94,7 +94,7 @@ static partial class ModPeek
 
                 case "version":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.Version)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Version), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
@@ -104,7 +104,7 @@ static partial class ModPeek
 
                 case "networkversion":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.NetworkVersion)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.NetworkVersion), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
@@ -114,7 +114,7 @@ static partial class ModPeek
 
                 case "texturesize":
                     if(prop.Value.Type != JTokenType.Integer) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.Integer, nameof(ModInfo.TextureSize)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.TextureSize), JTokenType.Integer, prop.Value));
                         error = true;
                         break;
                     }
@@ -124,14 +124,14 @@ static partial class ModPeek
 
                 case "side": {
                     if(prop.Value.Type != JTokenType.String) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.Side)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Side), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
 
                     var sideStr = prop.Value.ToObject<string>();
                     if (!Enum.TryParse(sideStr, true, out EnumAppSide side)) {
-                        errorCallback(Errors.StringParsingFailure(sideStr, nameof(EnumAppSide), nameof(ModInfo.Side)));
+                        errorCallback(new Errors.StringParsingFailure(nameof(ModInfo.Side), nameof(EnumAppSide), sideStr));
                         error = true;
                         break;
                     }
@@ -141,14 +141,14 @@ static partial class ModPeek
 
                 case "type": {
                     if(prop.Value.Type != JTokenType.String) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.Type)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Type), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
 
                     var typeStr = prop.Value.ToObject<string>();
                     if (!Enum.TryParse(typeStr, true, out EnumModType type)) {
-                        errorCallback(Errors.StringParsingFailure(typeStr, nameof(EnumModType), nameof(ModInfo.Type)));
+                        errorCallback(new Errors.StringParsingFailure(nameof(ModInfo.Type), nameof(EnumModType), typeStr));
                         type = EnumModType.Code; // Likely most restricted category, we don't have a neutral default.
                         error = true;
                         break;
@@ -159,7 +159,7 @@ static partial class ModPeek
 
                 case "requiredonclient":
                     if(prop.Value.Type != JTokenType.Boolean) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.Boolean, nameof(ModInfo.RequiredOnClient)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.RequiredOnClient), JTokenType.Boolean, prop.Value));
                         error = true;
                         break;
                     }
@@ -169,7 +169,7 @@ static partial class ModPeek
 
                 case "requiredonserver":
                     if(prop.Value.Type != JTokenType.Boolean) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.Boolean, nameof(ModInfo.RequiredOnServer)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.RequiredOnServer), JTokenType.Boolean, prop.Value));
                         error = true;
                         break;
                     }
@@ -179,7 +179,7 @@ static partial class ModPeek
 
                 case "description":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
-                        Console.Error.WriteLine($"The Description property is not a string ('{prop.Value.ToString(Formatting.None)}').");
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Description), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
@@ -189,7 +189,7 @@ static partial class ModPeek
 
                 case "website":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.String, nameof(ModInfo.Website)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Website), JTokenType.String, prop.Value));
                         error = true;
                         break;
                     }
@@ -199,7 +199,7 @@ static partial class ModPeek
 
                 case "authors": {
                     if(prop.Value.Type != JTokenType.Array) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.Array, nameof(ModInfo.Authors)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Authors), JTokenType.Array, prop.Value));
                         error = true;
                         break;
                     }
@@ -208,7 +208,7 @@ static partial class ModPeek
                     int i = 0;
                     foreach(var element in prop.Value.Values()) {
                         if(element.Type != JTokenType.String) {
-                            errorCallback(Errors.UnexpectedJsonPropertyType(element, JTokenType.String, $"{nameof(ModInfo.Authors)}[{i}]"));
+                            errorCallback(new Errors.UnexpectedJsonPropertyType($"{nameof(ModInfo.Authors)}[{i}]", JTokenType.String, element));
                             error = true;
                         }
                         else {
@@ -222,7 +222,7 @@ static partial class ModPeek
 
                 case "contributors":{
                     if(prop.Value.Type != JTokenType.Array) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.Array, nameof(ModInfo.Contributors)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Contributors), JTokenType.Array, prop.Value));
                         error = true;
                         break;
                     }
@@ -231,7 +231,7 @@ static partial class ModPeek
                     int i = 0;
                     foreach(var element in prop.Value.Values()) {
                         if(element.Type != JTokenType.String) {
-                            errorCallback(Errors.UnexpectedJsonPropertyType(element, JTokenType.String, $"{nameof(ModInfo.Contributors)}[{i}]"));
+                            errorCallback(new Errors.UnexpectedJsonPropertyType($"{nameof(ModInfo.Contributors)}[{i}]", JTokenType.String, element));
                             error = true;
                         }
                         else {
@@ -245,7 +245,7 @@ static partial class ModPeek
 
                 case "dependencies":{
                     if(prop.Value.Type != JTokenType.Object) {
-                        errorCallback(Errors.UnexpectedJsonPropertyType(prop.Value, JTokenType.Object, nameof(ModInfo.Dependencies)));
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Dependencies), JTokenType.Object, prop.Value));
                         error = true;
                         break;
                     }
@@ -253,7 +253,7 @@ static partial class ModPeek
                     var dependencies = new List<ModDependency>();
                     foreach(var depProp in ((JObject)prop.Value).Properties()) {
                         if(depProp.Value.Type != JTokenType.String && depProp.Value.Type != JTokenType.Null) {
-                            errorCallback(Errors.UnexpectedJsonPropertyType(depProp.Value, JTokenType.String, $"{nameof(ModInfo.Dependencies)}[{depProp.Name}]"));
+                            errorCallback(new Errors.UnexpectedJsonPropertyType($"{nameof(ModInfo.Dependencies)}[{depProp.Name}]", JTokenType.String, depProp.Value));
                             error = true;
                             continue;
                         }
@@ -265,7 +265,7 @@ static partial class ModPeek
                 } break;
 
                 default:
-                    errorCallback(Errors.UnexpectedProperty(prop.Name, prop.Value.ToString(Formatting.None)));
+                    errorCallback(new Errors.UnexpectedProperty(prop.Name, prop.Value.ToString(Formatting.None)));
                     error = true;
                     break;
             }

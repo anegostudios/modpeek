@@ -5,7 +5,7 @@ namespace VintageStory.ModPeek;
 
 public static partial class ModPeek
 {
-    static bool TryGetDllInfo(byte[] bytes, out ModInfo? modInfo, Action<Error> errorCallback)
+    static bool TryGetDllInfo(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         static CustomAttributeNamedArgument GetProperty(CustomAttribute customAttribute, string propName)
         {
@@ -26,7 +26,7 @@ public static partial class ModPeek
 
         var modInfoAttr = assemblyDefinition.CustomAttributes.SingleOrDefault(attribute => attribute.AttributeType.Name == nameof(ModInfoAttribute));
         if (modInfoAttr == null) {
-            errorCallback(Errors.MissingAssemblyAttribute(nameof(ModInfoAttribute)));
+            errorCallback(new Errors.MissingAssemblyAttribute(nameof(ModInfoAttribute)));
             modInfo = null;
             return false;
         }

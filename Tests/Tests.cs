@@ -210,10 +210,10 @@ public class Tests
 		CompareInfos(reference, modInfo!);
 	}
 
-	static void PrintErrorToStdError(Error error)
-    {
-        Console.Error.WriteLine(ModPeek.FormatError(error));
-    }
+	static void PrintErrorToStdError(Errors.Error error)
+	{
+		Console.Error.WriteLine(ModPeek.FormatError(error));
+	}
 
 	public void CompareInfos(ModInfo reference, ModInfo info)
 	{
