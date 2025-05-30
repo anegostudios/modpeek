@@ -94,7 +94,7 @@ Operands:
         }
 
         var error = !TryGetModInfo(f, out var modInfo, PrintErrorToStdError);
-        if (error || modInfo == null) {
+        if (modInfo == null) {
             Environment.Exit(1); return;
         }
 
