@@ -3,6 +3,7 @@ using Vintagestory.API.Common;
 using System.Runtime.Serialization;
 using System.Reflection;
 using System.Diagnostics;
+using System.Text;
 
 namespace VintageStory.ModPeek;
 
@@ -108,13 +109,25 @@ Operands:
             Console.WriteLine(modInfo.ModID + ":" + modInfo.Version);
         }
         else {
+            static string EscapedAndJoinCommaSeparatedList<T>(IReadOnlyList<T> list)
+            {
+                var b = new StringBuilder(list.Count * 16);
+                for(int i = 0; i < list.Count; i++) {
+                    if(i > 0) b.Append(", ");
+                    int start = b.Length;
+                    b.Append(list[i]);
+                    b.Replace(", ", @",\ ", start, b.Length - start);
+                }
+                return b.ToString();
+            }
+
             Console.WriteLine("Id: " + modInfo.ModID);
             Console.WriteLine("Name: " + modInfo.Name);
             Console.WriteLine("Version: " + modInfo.Version);
             Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
             Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
-            Console.WriteLine("Authors: " + string.Join(", ", modInfo.Authors));
-            Console.WriteLine("Contributors: " + string.Join(", ", modInfo.Contributors));
+            Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
+            Console.WriteLine("Contributors: " + EscapedAndJoinCommaSeparatedList(modInfo.Contributors));
             Console.WriteLine("Website: " + modInfo.Website);
             Console.WriteLine("Dependencies: " + string.Join(", ", modInfo.Dependencies));
         }
