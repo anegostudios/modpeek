@@ -1,227 +1,384 @@
-﻿using CommandLine;
-using Newtonsoft.Json;
-using System;
-using System.Text.RegularExpressions;
-using System.Reflection;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
+﻿using System.Text.RegularExpressions;
 using Vintagestory.API.Common;
-using Mono.Cecil;
+using System.Runtime.Serialization;
+using System.Reflection;
+using System.Diagnostics;
+using System.Text;
 
-namespace VintageStory.ModPeek
+namespace VintageStory.ModPeek;
+
+public static partial class ModPeek
 {
-
-    class Program
+    static void Main(string[] rawArgs)
     {
-        static void Main(string[] rawArgs)
+        void PrintUsage()
         {
-            if (rawArgs.Length == 0)
-            {
-                Console.Error.WriteLine("Missing args");
-                Environment.Exit(1);
-                return;
-            }
+            Console.Error.Write(
+$@"modpeek.exe - extract information from VintageStory mod files:
 
-            var args = new Args();
-            Parser parser = new Parser();
-            parser.ParseArguments(rawArgs, args);
+Synopsis:
+	modpeek.exe [-i] [-p] [-f] input
 
-            if (args.File == null)
-            {
-                Console.Error.WriteLine("Missing file argument");
-                Environment.Exit(1);
-                return;
-            }
+Options:
+	-f file, --file file:
+		The mod file to operate on. 
+		If this option is not specified the last standalone argument will be used instead.
 
+	-i, --idandversion
+		Only print   modid:version   and exit.
 
-            FileInfo f = new FileInfo(args.File);
-            if (!f.Exists)
-            {
-                Console.Error.WriteLine("No such file '" + args.File + "'");
-                Environment.Exit(1);
-                return;
-            }
+	-p, --always-print
+		Print partial info even if errors occurred (if possible).
+		If this is not set any errors will suppress normal output.
 
-            ModInfo minfo = GetModInfo(f);
-            if (minfo == null)
-            {
-                Environment.Exit(1);
-                return;
-            }
-
-
-            if (args.IdAndVersion)
-            {
-                Console.WriteLine(minfo.ModID + ":" + minfo.Version);
-            }
-            else
-            {
-
-                Console.WriteLine("Id: " + minfo.ModID);
-                Console.WriteLine("Name: " + minfo.Name);
-                Console.WriteLine("Version: " + minfo.Version);
-                Console.WriteLine("Authors: " + string.Join(", ", minfo.Authors));
-                Console.WriteLine("Website: " + minfo.Website);
-                Console.WriteLine("Description: " + minfo.Description);
-            }
-
-            Environment.Exit(0);
+Operands:
+	input
+		The mod file to extract information from.
+"
+            );
         }
 
-        private static ModInfo GetModInfo(FileInfo f)
-        {
-            var bytes = File.ReadAllBytes(f.FullName);
-            if(bytes.Length < 4) {
-                Console.Error.WriteLine("File size below sensible (< 4 bytes).");
-                return null;
-            }
+        bool idAndVersion = false;
+        bool alwaysPrint = false;
+        string? inputFile = null;
+        for (int i = 0; i < rawArgs.Length; i++) {
+            switch(rawArgs[i]) {
+                case "-h": case "--help":
+                    PrintUsage();
+                    return;
 
-            switch(f.Extension) {
-                case ".zip": return GetZipInfo(bytes);
-                case ".cs" : return GetCsInfo(bytes);
-                case ".dll": return GetDllInfo(bytes);
-            }
+                case "-i": case "--idandversion":
+                    idAndVersion = true;
+                    break;
 
-            var magic = BitConverter.ToUInt32(bytes, 0);
-            //NOTE(Rennorb): The only byteswap intrinsic on this version of dotnet is System.Net.HostToNetwork and i don't want to import that.
-            if(BitConverter.IsLittleEndian) magic = ((magic >> 24) & 0x000000FF) | ((magic >> 8) & 0x0000FF00) | ((magic << 8) & 0x00FF0000) | ((magic << 24) & 0xFF000000);
-                
-            if(magic == 0x504B0304) return GetZipInfo(bytes);
-            //NOTE(Rennorb): Technically speaking this is the MS DOS header and is optional, but realistically every dll is going to have it.
-            if((magic & 0xffff0000) == 0x4D5A0000) return GetDllInfo(bytes);
+                case "-p": case "--always-print":
+                    alwaysPrint = true;
+                    break;
 
-            var info = GetCsInfo(bytes);
-            if(info == null) {
-                Console.Error.WriteLine("Failed to determine file type from content, must be a\n" +
-                    "\tzip\t(containing 'modinfo.json'),\n" +
-                    "\tcs\t(containing a '[assembly: ModInfo(...)]' attribute) or\n" +
-                    "\tdll\t(containing a '[assembly: ModInfo(...)]' attribute).");
-            }
-            return info;
-        }
-
-        private static ModInfo GetDllInfo(byte[] bytes)
-        {
-            var assembly = AssemblyDefinition.ReadAssembly(new MemoryStream(bytes)); // no need to dispose here
-            return loadModInfoFromAssembly(assembly);
-        }
-
-        private static ModInfo GetCsInfo(byte[] bytes)
-        {
-            var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true); // no need to dispose here
-            string text = reader.ReadToEnd();
-
-            /*[assembly: ModInfo("StepUp", Version = "1.2.0", Side = "Client",
-	Description = "Doubles players' step height to allow stepping up full blocks",
-	Website = "https://www.vintagestory.at/forums/topic/3349-stepup-v120/",
-	Authors = new []{ "copygirl" })]*/
-
-            Regex rex = new Regex(@"\[assembly:\s*ModInfo\(\s*""([a-zA-z0-9]+)""");
-            Match m = rex.Match(text);
-
-            if (m.Success)
-            {
-                Regex vrex = new Regex(@"\[assembly:\s*ModInfo\(.*Version\s*=\s*""([[0-9a-z\.\-]+)""");
-                Match vm = vrex.Match(text);
-
-                return new ModInfo()
-                {
-                    ModID = m.Groups[1].Value,
-                    Version = vm.Groups[1].Value,
-                    Name = "all other modinfo attribtues are not read from cs files yet. Sorry"
-                    
-                };
-            }
-
-            return null;
-        }
-
-
-        private static ModInfo GetZipInfo(byte[] bytes)
-        {
-            try
-            {
-                using (var zip = new ZipArchive(new MemoryStream(bytes)))
-                {
-                    var entry = zip.GetEntry("modinfo.json");
-                    if (entry != null)
-                    {
-                        using (var reader = new StreamReader(entry.Open()))
-                        {
-                            var content = reader.ReadToEnd();
-                            return JsonConvert.DeserializeObject<ModInfo>(content);
-                        }
+                case "-f": case "file":
+                    if (i + 1 >= rawArgs.Length) {
+                        Console.Error.WriteLine($"Missing argument for {rawArgs[i]}.");
+                        Environment.Exit(1); return;
                     }
+
+                    i += 1;
+                    goto default;
+
+                default:
+                    if (inputFile == null) {
+                        inputFile = rawArgs[i];
+                        break;
+                    }
+                    else {
+                        if (rawArgs[i].StartsWith("-")) {
+                            Console.Error.WriteLine($"Unknown option '{rawArgs[i]}'.\n");
+                            PrintUsage();
+                        }
+                        else {
+                            Console.Error.WriteLine($"Cannot process multiple files.");
+                        }
+                        Environment.Exit(1); return;
+                    }
+            }
+        }
+
+        if (inputFile == null) {
+            Console.Error.WriteLine($"Missing input file.\n");
+            PrintUsage();
+            Environment.Exit(1); return;
+        }
+
+        var f = new FileInfo(inputFile);
+        if (!f.Exists) {
+            Console.Error.WriteLine($"No such file '{inputFile}'.");
+            Environment.Exit(1); return;
+        }
+
+        var error = !TryGetModInfo(f, out var modInfo, PrintErrorToStdError);
+        if (modInfo == null) {
+            Environment.Exit(1); return;
+        }
+
+        error |= !ValidateModInfo(modInfo, PrintErrorToStdError);
+        if (error && !alwaysPrint) {
+            Environment.Exit(1); return;
+        }
+
+
+        if (idAndVersion) {
+            Console.WriteLine(modInfo.ModID + ":" + modInfo.Version);
+        }
+        else {
+            static string EscapedAndJoinCommaSeparatedList<T>(IReadOnlyList<T> list)
+            {
+                var b = new StringBuilder(list.Count * 16);
+                for(int i = 0; i < list.Count; i++) {
+                    if(i > 0) b.Append(", ");
+                    int start = b.Length;
+                    b.Append(list[i]);
+                    b.Replace(", ", @",\ ", start, b.Length - start);
                 }
-            } catch (Exception e)
-            {
-                Console.Error.WriteLine("Failed to read zip file");
-                Console.Error.WriteLine(e.ToString());
+                return b.ToString();
             }
 
-
-            Console.Error.WriteLine("modinfo.json missing");
-            return null;
+            Console.WriteLine("Id: " + modInfo.ModID);
+            Console.WriteLine("Name: " + modInfo.Name);
+            Console.WriteLine("Version: " + modInfo.Version);
+            Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
+            Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
+            Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
+            Console.WriteLine("Contributors: " + EscapedAndJoinCommaSeparatedList(modInfo.Contributors));
+            Console.WriteLine("Website: " + modInfo.Website);
+            Console.WriteLine("Dependencies: " + string.Join(", ", modInfo.Dependencies));
         }
 
-        private static Mono.Cecil.CustomAttributeNamedArgument GetProperty(CustomAttribute customAttribute, string name)
-        {
-            return customAttribute.Properties.SingleOrDefault(property => property.Name == name);
+        Environment.Exit(error ? 1 : 0);
+    }
+
+    public static bool TryGetModInfo(FileInfo f, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
+    {
+        var bytes = File.ReadAllBytes(f.FullName);
+        if (bytes.Length < 4) {
+            Console.Error.WriteLine("File size below sensible (< 4 bytes).");
+            modInfo = null;
+            return false;
         }
 
-        private static T GetPropertyValue<T>(CustomAttribute customAttribute, string name)
-        {
-            return (T) GetProperty(customAttribute, name).Argument.Value;
-		}
+        switch (f.Extension) {
+            case ".zip": return TryGetZipInfo(bytes, out modInfo, errorCallback);
+            case ".cs" : return TryGetCsInfo (bytes, out modInfo, errorCallback);
+            case ".dll": return TryGetDllInfo(bytes, out modInfo, errorCallback);
+        }
 
-		private static T[] GetPropertyValueArray<T>(CustomAttribute customAttribute, string name)
-		{
-            return (GetProperty(customAttribute, name).Argument.Value as CustomAttributeArgument[])?.Select(item => (T) item.Value).ToArray();
-		}
+        var magic = BitConverter.ToUInt32(bytes, 0);
+        //NOTE(Rennorb): The only byteswap intrinsic on this version of dotnet is System.Net.HostToNetwork and I don't want to import that.
+        if (BitConverter.IsLittleEndian) magic = ((magic >> 24) & 0x000000FF) | ((magic >> 8) & 0x0000FF00) | ((magic << 8) & 0x00FF0000) | ((magic << 24) & 0xFF000000);
+                
+        if (magic == 0x504B0304) return TryGetZipInfo(bytes, out modInfo, errorCallback);
+        //NOTE(Rennorb): Technically speaking this is the MS DOS header and is optional, but realistically every dll is going to have it.
+        if ((magic & 0xffff0000) == 0x4D5A0000) return TryGetDllInfo(bytes, out modInfo, errorCallback);
 
-		private static ModInfo loadModInfoFromAssembly(AssemblyDefinition assemblyDefinition)
-        {
-            var modInfoAttr = assemblyDefinition.CustomAttributes.SingleOrDefault(attribute => attribute.AttributeType.Name == "ModInfoAttribute");
-			if (modInfoAttr == null)
-            {
-                return null;
+        if (TryGetCsInfo(bytes, out modInfo, errorCallback)) return true;
+
+        Console.Error.WriteLine(
+@"Failed to determine file type from content, must be a
+	zip	(containing 'modinfo.json'),
+	cs	(containing a '[assembly: ModInfo(...)]' attribute) or
+	dll	(containing a '[assembly: ModInfo(...)]' attribute).
+"
+        );
+        return false;
+    }
+
+    /// <summary>Validates the data inside a ModInfo and sets invalid fields to blank / default values.</summary>
+    /// <returns>False if any data is invalid.</returns>
+    public static bool ValidateModInfo(ModInfo modInfo, Action<Errors.Error> errorCallback)
+    {
+        var error = false;
+            
+        if (string.IsNullOrWhiteSpace(modInfo.Name)) {
+            errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.Name)));
+            error = true;
+            modInfo.Name = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(modInfo.ModID)) {
+            if (!string.IsNullOrWhiteSpace(modInfo.Name)) {
+                try {
+                    modInfo.ModID = ModInfo.ToModID(modInfo.Name);
+                }
+                catch (ArgumentException e) {
+                    errorCallback(new Errors.ModIDGenerationFailure(e, modInfo.Name!));
+                    modInfo.ModID = null;
+                    error = true;
+                }
+            }
+            else {
+                errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.ModID)));
+                modInfo.ModID = null;
+                error = true;
+            }
+        }
+        else if (!ModInfo.IsValidModID(modInfo.ModID)) {
+            errorCallback(new Errors.MalformedPrimaryModID(modInfo.ModID));
+            error = true;
+            modInfo.ModID = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(modInfo.Version)) {
+            modInfo.Version = null; // unify the value
+        }
+        else {
+            if (!IsValidVersion(modInfo.Version)) {
+                errorCallback(new Errors.MalformedPrimaryVersion(modInfo.Version));
+                error = true;
+                modInfo.Version = null;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(modInfo.NetworkVersion)) {
+            modInfo.NetworkVersion = null; // unify the value
+        }
+        else {
+            if (!IsValidVersion(modInfo.NetworkVersion)) {
+                errorCallback(new Errors.MalformedNetworkVersion(modInfo.NetworkVersion));
+                error = true;
+                modInfo.NetworkVersion = null;
+            }
+        }
+
+        if (!Enum.IsDefined(typeof(EnumModType), modInfo.Type)) {
+            errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Type), nameof(EnumModType), modInfo.Type.ToString()));
+            error = true;
+            // Code probably the one wit the highest security restrictions, so we pick this one as a fallback.
+            // We don't have a neutral default.
+            modInfo.Type = EnumModType.Code;
+        }
+
+        if (!Enum.IsDefined(typeof(EnumAppSide), modInfo.Side)) {
+            errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Side), nameof(EnumAppSide), modInfo.Side.ToString()));
+            error = true;
+            modInfo.Side = 0;
+        }
+
+        if (string.IsNullOrWhiteSpace(modInfo.Website)) {
+            modInfo.Website = null; // unify the value
+        }
+        else {
+            try {
+                _ = new Uri(modInfo.Website);
+            }
+            catch {
+                errorCallback(new Errors.StringParsingFailure(nameof(modInfo.Website), "URL", modInfo.Website));
+                modInfo.Website = null;
+                error = true;
+            }
+        }
+
+        var authors = (modInfo.Authors as List<string>) ?? modInfo.Authors.ToList();
+        for (int i = authors.Count - 1; i >= 0; i--) {
+            var author = authors[i];
+            foreach(var c in author) {
+                if(c == '\n' || c == '\r') {
+                    errorCallback(new Errors.MalformedAuthorName(author));
+                    error = true;
+                    authors.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+        if (authors.Count != modInfo.Authors.Count) modInfo.Authors = authors;
+
+        var contributors = (modInfo.Contributors as List<string>) ?? modInfo.Contributors.ToList();
+        for (int i = contributors.Count - 1; i >= 0; i--) {
+            var contributor = contributors[i];
+            foreach(var c in contributor) {
+                if(c == '\n' || c == '\r') {
+                    errorCallback(new Errors.MalformedContributorName(contributor));
+                    error = true;
+                    contributors.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+        if (contributors.Count != modInfo.Contributors.Count) modInfo.Contributors = contributors;
+
+        var dependencies = (modInfo.Dependencies as List<ModDependency>) ?? modInfo.Dependencies.ToList();
+        for (int i = dependencies.Count - 1; i >= 0; i--) {
+            var dependency = dependencies[i];
+            if (string.IsNullOrWhiteSpace(dependency.ModID)) {
+                errorCallback(new Errors.MissingDependencyModID());
+                error = true;
+                dependencies.RemoveAt(i);
+                continue;
+            }
+            if (!ModInfo.IsValidModID(dependency.ModID)) {
+                errorCallback(new Errors.MalformedDependencyModID(dependency.ModID));
+                dependencies.RemoveAt(i);
+                error = true;
+                continue;
             }
 
-			string name = modInfoAttr.ConstructorArguments[0].Value as string;
-			string modID = modInfoAttr.ConstructorArguments[1].Value as string;
-
-			EnumAppSide side;
-            if (!Enum.TryParse(GetPropertyValue<string>(modInfoAttr, "Side"), true, out side))
-            {
-                side = EnumAppSide.Universal;
+            if (string.IsNullOrEmpty(dependency.Version) || dependency.Version == "*") {
+                if (s_modIDProp == null) FindDependencyBackingFields();
+                s_versionProp!.SetValue(dependency, null); // unify the value
             }
-
-			var dependencies = assemblyDefinition.CustomAttributes
-				.Where(attribute => attribute.AttributeType.Name == "ModDependencyAttribute")
-				.Select(attribute => new ModDependency((string) attribute.ConstructorArguments[0].Value, attribute.ConstructorArguments[1].Value as string))
-				.ToList();
-
-
-			ModInfo info = new ModInfo(
-                EnumModType.Code, name, modID,
-                GetPropertyValue<string>(modInfoAttr, "Version"),
-				GetPropertyValue<string>(modInfoAttr, "Description"),
-                GetPropertyValueArray<string>(modInfoAttr, "Authors"),
-				GetPropertyValueArray<string>(modInfoAttr, "Contributors"),
-				GetPropertyValue<string>(modInfoAttr, "Website"),
-				side,
-				GetPropertyValue<bool?>(modInfoAttr, "RequiredOnClient").GetValueOrDefault(),
-				GetPropertyValue<bool?>(modInfoAttr, "RequiredOnServer").GetValueOrDefault(),
-                dependencies);
-
-            info.NetworkVersion = GetPropertyValue<string>(modInfoAttr, "NetworkVersion");
-
-            return info;
+            else if (!IsValidVersion(dependency.Version)) {
+                errorCallback(new Errors.MalformedDependencyVersion(dependency.ModID, dependency.Version));
+                error = true;
+                dependencies.RemoveAt(i);
+                continue;
+            }
         }
+        if (modInfo.Dependencies.Count != dependencies.Count) modInfo.Dependencies = dependencies;
+
+        return !error;
+    }
+
+    const string VERSION_REGEX = @"^\d{1,5}\.\d{1,4}\.\d{1,4}(?:-(?:rc|pre|dev)\.\d{1,4})?$";
+    static readonly Regex s_versionRegex = new(VERSION_REGEX);
+    static bool IsValidVersion(string versionString)
+    {
+        return s_versionRegex.IsMatch(versionString);
+    }
+
+    static FieldInfo? s_modIDProp;
+    static FieldInfo? s_versionProp;
+    static void FindDependencyBackingFields()
+    {
+        foreach(var member in typeof(ModDependency).GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)) {
+            if (member.MemberType != MemberTypes.Field) continue;
+            var name = member.Name.ToLower();
+            if (name.Contains(nameof(ModDependency.ModID).ToLower())) {
+                s_modIDProp = (FieldInfo)member;
+            }
+            else if (name.Contains(nameof(ModDependency.Version).ToLower())) {
+                s_versionProp = (FieldInfo)member;
+            }
+        }
+        Debug.Assert(s_modIDProp != null && s_versionProp != null);
+    }
+    /// <summary> Hacky way to crate a dependency object without invoking its constructor.
+    /// The checks in there are not sufficient and i want to do them in a later place. </summary>
+    static ModDependency NewDependencyUnchecked(string? modID, string? version)
+    {
+        if (s_modIDProp == null) FindDependencyBackingFields();
+        var dep = (ModDependency)FormatterServices.GetUninitializedObject(typeof(ModDependency));
+        s_modIDProp!.SetValue(dep, modID);
+        s_versionProp!.SetValue(dep, version);
+        return dep;
+    }
+
+    static void PrintErrorToStdError(Errors.Error error)
+    {
+        Console.Error.WriteLine(FormatError(error));
+    }
+
+    public static string FormatError(Errors.Error error)
+    {
+        return error switch {
+            Errors.MalformedArchive           err => $"The zip archive failed to decode: {err.Exception.Message}.",
+            Errors.MissingFileInArchiveRoot   err => $"The zip archive is missing a file named {err.FileName} in its root."+
+                (err.LikelyCompressedDirectory ? " All files in the archive share a common parent directory, so you likely compressed a directory instead of individual files." : ""),
+            Errors.MalformedJson              err => $"The provided modinfo.json was malformed: {err.Exception.Message}.",
+            Errors.UnexpectedJsonRootType     err => $"The root element of the modinfo.json must be a {err.ExpectedType}, but was {err.Given.Type}.",
+            Errors.MissingAssemblyAttribute   err => $"Missing expected assembly-attribute '{err.AttributeName}'.",
+            Errors.PrimitiveParsingFailure    err => $"The {err.TargetProperty} property failed to parse as a {err.ExpectedType} (was '{err.MalformedInput}').",
+            Errors.StringParsingFailure       err => $"The {err.TargetProperty} property failed to convert from a string to {err.ExpectedType} (was '{err.MalformedInput}').",
+            Errors.MissingRequiredProperty    err => $"{err.TargetStructure} is missing the required property '{err.PropertyName}'.",
+            Errors.UnexpectedProperty         err => $"Unexpected property '{err.PropertyName}' with value '{err.PropertyValue}'.",
+            Errors.UnexpectedValue            err => $"Property '{err.TargetProperty}' was expected to be {err.Expected}, but was '{err.Given}'.",
+            Errors.UnexpectedJsonPropertyType err => $"Property '{err.TargetProperty}' was expected to be of type {err.ExpectedType}, but was '{err.Given.ToString(Newtonsoft.Json.Formatting.None)}'.",
+            Errors.MalformedPrimaryModID      err => $"The ModID of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.MalformedPrimaryVersion    err => $"The Version of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.MalformedNetworkVersion    err => $"The NetworkVersion of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.ModIDGenerationFailure     err => $"Mod name '{err.MalformedInput}' failed to be converted to a ModID: {err.Exception}.",
+            Errors.MissingDependencyModID         => $"A dependency was specified that does not have target ModID set.",
+            Errors.MalformedDependencyModID   err => $"Dependency '{err.MalformedInput}' specifies a malformed ModID.",
+            Errors.MalformedDependencyVersion err => $"Dependency '{err.Dependency}' specifies a malformed target Version ('{err.MalformedInput}').",
+            Errors.MalformedAuthorName        err => $"'{err.MalformedInput}' is not a valid author name.",
+            Errors.MalformedContributorName   err => $"'{err.MalformedInput}' is not a valid contributor name.",
+            _ => $"Unknown error of severity {error.Severity}: {error}."
+        };
     }
 }

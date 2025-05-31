@@ -1,3 +1,6 @@
-bin
-modpeek/obj
-.vs
+bin/
+obj/
+.vs/
+TestResults/
+
+*.user
