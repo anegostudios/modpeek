@@ -124,6 +124,7 @@ Operands:
             Console.WriteLine("Id: " + modInfo.ModID);
             Console.WriteLine("Name: " + modInfo.Name);
             Console.WriteLine("Version: " + modInfo.Version);
+            Console.WriteLine("Type: " + modInfo.Type);
             Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
             Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
             Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
