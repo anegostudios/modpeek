@@ -4,6 +4,7 @@
 //
 
 [assembly: ModInfo("Test2", // Lets put a comment in the middle of the attribute.
+	Version = "0.0.1",
 	Description = """
 	Test" ....
 	""", // Verbatim string literals.

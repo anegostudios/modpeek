@@ -207,7 +207,12 @@ Operands:
         }
 
         if (string.IsNullOrWhiteSpace(modInfo.Version)) {
-            modInfo.Version = null; // unify the value
+            errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.Version)));
+            error = true;
+            modInfo.Version = null;
+        }
+        else if(modInfo.Version == BROKEN_VERSION) {
+            modInfo.Version = null;
         }
         else {
             if (!IsValidVersion(modInfo.Version)) {
@@ -218,7 +223,10 @@ Operands:
         }
 
         if (string.IsNullOrWhiteSpace(modInfo.NetworkVersion)) {
-            modInfo.NetworkVersion = null; // unify the value
+            modInfo.NetworkVersion = modInfo.Version; // The "spec" (https://wiki.vintagestory.at/Special:MyLanguage/Modinfo) sais this defaults to the specified version.
+        }
+        else if(modInfo.NetworkVersion == BROKEN_VERSION) {
+            modInfo.NetworkVersion = null;
         }
         else {
             if (!IsValidVersion(modInfo.NetworkVersion)) {
@@ -231,7 +239,7 @@ Operands:
         if (!Enum.IsDefined(typeof(EnumModType), modInfo.Type)) {
             errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Type), nameof(EnumModType), modInfo.Type.ToString()));
             error = true;
-            // Code probably the one wit the highest security restrictions, so we pick this one as a fallback.
+            // Code mods are probably the ones with the highest security restrictions, so we pick that as a fallback.
             // We don't have a neutral default.
             modInfo.Type = EnumModType.Code;
         }
@@ -316,6 +324,7 @@ Operands:
         return !error;
     }
 
+    const string BROKEN_VERSION = "broken";
     const string VERSION_REGEX = @"^\d{1,5}\.\d{1,4}\.\d{1,4}(?:-(?:rc|pre|dev)\.\d{1,4})?$";
     static readonly Regex s_versionRegex = new(VERSION_REGEX);
     static bool IsValidVersion(string versionString)

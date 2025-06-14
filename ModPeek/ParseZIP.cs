@@ -72,6 +72,9 @@ static partial class ModPeek
         foreach(var prop in ((JObject)root).Properties()) {
             switch(prop.Name.ToLower(System.Globalization.CultureInfo.InvariantCulture)) {
                 //NOTE(Rennorb) Cannot apply ToLower to nameof while keeping it const, so i have to manually specify these names...
+                case "custom":
+                    // Custom field that is completely ignored by validation.
+                    break;
 
                 case "$schema": // Allow usage of a json schema, even if its not in the spec.
                     if(prop.Value.Type != JTokenType.String) {
@@ -103,6 +106,7 @@ static partial class ModPeek
                 case "version":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
                         errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Version), JTokenType.String, prop.Value));
+                        modInfo.Version = BROKEN_VERSION;
                         error = true;
                         break;
                     }
@@ -113,6 +117,7 @@ static partial class ModPeek
                 case "networkversion":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
                         errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.NetworkVersion), JTokenType.String, prop.Value));
+                        modInfo.NetworkVersion = BROKEN_VERSION;
                         error = true;
                         break;
                     }

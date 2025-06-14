@@ -4,6 +4,7 @@
 //
 
 [assembly: ModInfo("Test1", 
+	Version = "0.0.1",
 	Description = @"Test"" ....",
 	Website = "",
 	Authors = new []{ "copy\"girl" })]

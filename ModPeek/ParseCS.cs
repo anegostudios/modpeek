@@ -64,6 +64,7 @@ static partial class ModPeek
                                 case nameof(ModInfoAttribute.Version):
                                     if (!TryParseString(propValueExpr, out modInfo.Version)) {
                                         errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Version), "string", propValueExpr.ToString()));
+                                        modInfo.Version = BROKEN_VERSION;
                                         error = true;
                                     }
                                     break;
@@ -71,6 +72,7 @@ static partial class ModPeek
                                 case nameof(ModInfoAttribute.NetworkVersion):
                                     if (!TryParseString(propValueExpr, out modInfo.NetworkVersion)) {
                                         errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.NetworkVersion), "string", propValueExpr.ToString()));
+                                        modInfo.NetworkVersion = BROKEN_VERSION;
                                         error = true;
                                     }
                                     break;
