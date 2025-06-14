@@ -72,6 +72,14 @@ static partial class ModPeek
         foreach(var prop in ((JObject)root).Properties()) {
             switch(prop.Name.ToLower(System.Globalization.CultureInfo.InvariantCulture)) {
                 //NOTE(Rennorb) Cannot apply ToLower to nameof while keeping it const, so i have to manually specify these names...
+
+                case "$schema": // Allow usage of a json schema, even if its not in the spec.
+                    if(prop.Value.Type != JTokenType.String) {
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(prop.Name, JTokenType.String, prop.Value));
+                        error = true;
+                    }
+                    break;
+
                 case "name":
                     if(prop.Value.Type != JTokenType.String && prop.Value.Type != JTokenType.Null) {
                         errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Name), JTokenType.String, prop.Value));
