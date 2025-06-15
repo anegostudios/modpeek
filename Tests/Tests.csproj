@@ -39,7 +39,7 @@
     <ItemGroup>
         <Reference Include="VintagestoryAPI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
             <SpecificVersion>False</SpecificVersion>
-            <HintPath>..\..\..\..\AppData\Roaming\Vintagestory\VintagestoryAPI.dll</HintPath>
+            <HintPath>..\lib\Vintagestory\VintagestoryAPI.dll</HintPath>
         </Reference>
     </ItemGroup>
 

@@ -2,7 +2,7 @@
   "profiles": {
     "ModPeek defective mod": {
       "commandName": "Project",
-      "commandLineArgs": "-p jtraits_0.2.6.zip",
+      "commandLineArgs": "-p zzz_escapes_root_path.cs",
       "workingDirectory": "../Tests/TestInput/Defect/"
     },
     "ModPeek (print help)": {

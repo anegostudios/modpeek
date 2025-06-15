@@ -56,6 +56,7 @@ public static partial class ModPeek
             dependencies
         ) {
             NetworkVersion = GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.NetworkVersion)),
+            IconPath = GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.IconPath)),
         };
         return true;
     }

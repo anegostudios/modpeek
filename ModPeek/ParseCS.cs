@@ -128,7 +128,10 @@ static partial class ModPeek
                                     break;
 
                                 case nameof(ModInfoAttribute.IconPath):
-                                    // Ignored for single file mods, but add a case here so we don't produce a warning.
+                                    if (!TryParseString(propValueExpr, out modInfo.IconPath)) {
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.Website), "string", propValueExpr.ToString()));
+                                        error = true;
+                                    }
                                     break;
 
                                 case nameof(ModInfoAttribute.WorldConfig):

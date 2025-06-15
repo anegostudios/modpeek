@@ -147,6 +147,14 @@ public class Tests
 			NetworkVersion = "0.0.1",
 			Dependencies = [ new("game", null), new("somemod", "1.2.3-pre.4") ],
 		},
+		["zzz_escapes_root_path.cs"] = new ModInfo() {
+			Type         = EnumModType.Code,
+			ModID        = "noescapingtherootpath",
+			Name         = "no escaping the root path",
+			Authors      = [ "Rennorb" ],
+			Version        = "0.0.1",
+			NetworkVersion = "0.0.1",
+		},
 	};
 
 	[TestMethod]
@@ -209,6 +217,7 @@ public class Tests
 
 	[TestMethod]
 	[DataRow("jtraits_0.2.6.zip")]
+	[DataRow("zzz_escapes_root_path.cs")]
 	public void ValidationError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);

@@ -193,6 +193,16 @@ static partial class ModPeek
                     modInfo.RequiredOnServer = prop.Value.GetBoolean();
                     break;
 
+                case "iconpath": {
+                    if(prop.Value.ValueKind != JsonValueKind.String) {
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.IconPath), JsonValueKind.String, prop.Value));
+                        error = true;
+                        break;
+                    }
+
+                    modInfo.IconPath = prop.Value.GetString();
+                } break;
+
                 case "description":
                     if(prop.Value.ValueKind != JsonValueKind.String && prop.Value.ValueKind != JsonValueKind.Null) {
                         errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.Description), JsonValueKind.String, prop.Value));

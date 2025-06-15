@@ -125,7 +125,11 @@ Operands:
             Console.WriteLine("Name: " + modInfo.Name);
             Console.WriteLine("Version: " + modInfo.Version);
             Console.WriteLine("Type: " + modInfo.Type);
+            Console.WriteLine("Side: " + modInfo.Side);
+            Console.WriteLine("RequiredOnClient: " + modInfo.RequiredOnClient);
+            Console.WriteLine("RequiredOnServer: " + modInfo.RequiredOnServer);
             Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
+            Console.WriteLine("IconPath: " + modInfo.IconPath);
             Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
             Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
             Console.WriteLine("Contributors: " + EscapedAndJoinCommaSeparatedList(modInfo.Contributors));
@@ -248,6 +252,25 @@ Operands:
             errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Side), nameof(EnumAppSide), modInfo.Side.ToString()));
             error = true;
             modInfo.Side = 0;
+        }
+
+        if (string.IsNullOrWhiteSpace(modInfo.IconPath)) {
+            modInfo.IconPath = null; // unify
+        }
+        else {
+            var err = false;
+            try {
+                var tempPath = Path.GetTempPath();
+                var testPath = Path.GetFullPath(Path.Combine(tempPath, modInfo.IconPath));
+                err = !testPath.StartsWith(tempPath, StringComparison.Ordinal);
+            }
+            catch { err = true; }
+
+            if (err) {
+                errorCallback(new Errors.StringParsingFailure(nameof(modInfo.IconPath), "a relative path within the mod", modInfo.IconPath));
+                modInfo.IconPath = null;
+                error = true;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(modInfo.Website)) {
