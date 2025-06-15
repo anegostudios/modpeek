@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net462</TargetFramework>
+		<TargetFramework>net8</TargetFramework>
 		<FileAlignment>512</FileAlignment>
 		<Deterministic>true</Deterministic>
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -57,12 +57,9 @@
 		<Reference Include="Mono.Cecil.Rocks, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
 			<HintPath>..\lib\Mono.Cecil.0.11.5\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
 		</Reference>
-		<Reference Include="Newtonsoft.Json">
-			<HintPath>..\lib\Newtonsoft.Json.dll</HintPath>
-		</Reference>
 		<Reference Include="VintagestoryAPI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
 			<SpecificVersion>False</SpecificVersion>
-			<HintPath>..\..\..\..\AppData\Roaming\Vintagestory\VintagestoryAPI.dll</HintPath>
+			<HintPath>..\lib\Vintagestory\VintagestoryAPI.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 

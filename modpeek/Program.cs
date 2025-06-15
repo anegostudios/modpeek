@@ -1,9 +1,9 @@
 ﻿using System.Text.RegularExpressions;
 using Vintagestory.API.Common;
-using System.Runtime.Serialization;
 using System.Reflection;
 using System.Diagnostics;
 using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace VintageStory.ModPeek;
 
@@ -353,7 +353,7 @@ Operands:
     static ModDependency NewDependencyUnchecked(string? modID, string? version)
     {
         if (s_modIDProp == null) FindDependencyBackingFields();
-        var dep = (ModDependency)FormatterServices.GetUninitializedObject(typeof(ModDependency));
+        var dep = (ModDependency)RuntimeHelpers.GetUninitializedObject(typeof(ModDependency));
         s_modIDProp!.SetValue(dep, modID);
         s_versionProp!.SetValue(dep, version);
         return dep;
@@ -371,14 +371,14 @@ Operands:
             Errors.MissingFileInArchiveRoot   err => $"The zip archive is missing a file named {err.FileName} in its root."+
                 (err.LikelyCompressedDirectory ? " All files in the archive share a common parent directory, so you likely compressed a directory instead of individual files." : ""),
             Errors.MalformedJson              err => $"The provided modinfo.json was malformed: {err.Exception.Message}.",
-            Errors.UnexpectedJsonRootType     err => $"The root element of the modinfo.json must be a {err.ExpectedType}, but was {err.Given.Type}.",
+            Errors.UnexpectedJsonRootType     err => $"The root element of the modinfo.json must be a {err.ExpectedType}, but was {err.Given.ValueKind}.",
             Errors.MissingAssemblyAttribute   err => $"Missing expected assembly-attribute '{err.AttributeName}'.",
             Errors.PrimitiveParsingFailure    err => $"The {err.TargetProperty} property failed to parse as a {err.ExpectedType} (was '{err.MalformedInput}').",
             Errors.StringParsingFailure       err => $"The {err.TargetProperty} property failed to convert from a string to {err.ExpectedType} (was '{err.MalformedInput}').",
             Errors.MissingRequiredProperty    err => $"{err.TargetStructure} is missing the required property '{err.PropertyName}'.",
             Errors.UnexpectedProperty         err => $"Unexpected property '{err.PropertyName}' with value '{err.PropertyValue}'.",
             Errors.UnexpectedValue            err => $"Property '{err.TargetProperty}' was expected to be {err.Expected}, but was '{err.Given}'.",
-            Errors.UnexpectedJsonPropertyType err => $"Property '{err.TargetProperty}' was expected to be of type {err.ExpectedType}, but was '{err.Given.ToString(Newtonsoft.Json.Formatting.None)}'.",
+            Errors.UnexpectedJsonPropertyType err => $"Property '{err.TargetProperty}' was expected to be of type {err.ExpectedType}, but was '{err.Given.GetRawText()}'.",
             Errors.MalformedPrimaryModID      err => $"The ModID of this mod ('{err.MalformedInput}') is malformed.",
             Errors.MalformedPrimaryVersion    err => $"The Version of this mod ('{err.MalformedInput}') is malformed.",
             Errors.MalformedNetworkVersion    err => $"The NetworkVersion of this mod ('{err.MalformedInput}') is malformed.",

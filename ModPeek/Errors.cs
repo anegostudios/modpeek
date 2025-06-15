@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
 
 namespace VintageStory.ModPeek.Errors;
 
@@ -51,14 +51,14 @@ public class UnexpectedValue(string targetProperty, string expected, string give
     public string Expected       = expected;
     public string Given          = given;
 }
-public class UnexpectedJsonPropertyType(string targetProperty, JTokenType expectedType, JToken given) : Error(Severity.Warning) {
-    public string     TargetProperty = targetProperty;
-    public JTokenType ExpectedType   = expectedType;
-    public JToken     Given          = given;
+public class UnexpectedJsonPropertyType(string targetProperty, JsonValueKind expectedType, JsonElement given) : Error(Severity.Warning) {
+    public string        TargetProperty = targetProperty;
+    public JsonValueKind ExpectedType   = expectedType;
+    public JsonElement   Given          = given;
 }
-public class UnexpectedJsonRootType(JTokenType expectedType, JToken given) : Error(Severity.Fatal) {
-    public JTokenType ExpectedType   = expectedType;
-    public JToken     Given          = given;
+public class UnexpectedJsonRootType(JsonValueKind expectedType, JsonElement given) : Error(Severity.Fatal) {
+    public JsonValueKind ExpectedType   = expectedType;
+    public JsonElement   Given          = given;
 }
 public class MalformedPrimaryModID(string malformedInput) : Error(Severity.Fatal) {
     public string MalformedInput = malformedInput;
