@@ -245,6 +245,10 @@ public class Tests
 		Assert.AreEqual(reference.Side, info.Side);
 		Assert.AreEqual(reference.Type, info.Type);
 		Assert.AreEqual(reference.ModID, info.ModID);
+		Assert.AreEqual(reference.Website, info.Website);
+		Assert.AreEqual(reference.IconPath, info.IconPath);
+		Assert.AreEqual(reference.RequiredOnClient, info.RequiredOnClient);
+		Assert.AreEqual(reference.RequiredOnServer, info.RequiredOnServer);
 		AssertListEquals(reference.Authors, info.Authors);
 		AssertListEquals(reference.Contributors, info.Contributors);
 		AssertListEquals(reference.Dependencies, info.Dependencies, (a, b) => a.ToString() == b.ToString());
