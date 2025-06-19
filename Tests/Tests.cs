@@ -193,7 +193,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Valid/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		Assert.IsTrue(ModPeek.TryGetModInfo(f, out var modInfo, PrintErrorToStdError), "Parsing failed.");
+		Assert.IsTrue(ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError), "Parsing failed.");
 
 		Assert.IsTrue(ModPeek.ValidateModInfo(modInfo!, PrintErrorToStdError), "Validation failed.");
 
@@ -208,7 +208,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		var parseOk = ModPeek.TryGetModInfo(f, out var modInfo, PrintErrorToStdError);
+		var parseOk = ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError);
 		Assert.IsFalse(parseOk, "Expected parsing to fail.");
 		Assert.IsNull(modInfo, "Expected fatal error to not produce modinfo.");
 	}
@@ -222,7 +222,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		var parseOk = ModPeek.TryGetModInfo(f, out var modInfo, PrintErrorToStdError);
+		var parseOk = ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError);
 		if(modInfo != null) {
 			ModPeek.ValidateModInfo(modInfo, PrintErrorToStdError);
 		}
@@ -245,7 +245,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		Assert.IsTrue(ModPeek.TryGetModInfo(f, out var modInfo, PrintErrorToStdError), "Parsing failed.");
+		Assert.IsTrue(ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError), "Parsing failed.");
 
 		Assert.IsFalse(ModPeek.ValidateModInfo(modInfo!, PrintErrorToStdError), "Validation should have failed.");
 
@@ -255,7 +255,7 @@ public class Tests
 
 	static void PrintErrorToStdError(Errors.Error error)
 	{
-		Console.Error.WriteLine(ModPeek.FormatError(error));
+		Console.Error.WriteLine(ModPeekTool.FormatError(error));
 	}
 
 	public void CompareInfos(ModInfo reference, ModInfo info)

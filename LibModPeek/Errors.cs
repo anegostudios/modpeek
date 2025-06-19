@@ -11,6 +11,10 @@ public enum Severity : byte { Fatal, Warning }
 public abstract class Error(Severity severity) {
     public Severity Severity = severity;
 }
+public class FileToSmall() : Error(Severity.Fatal) {
+}
+public class CouldNotDetermineFileType() : Error(Severity.Fatal) {
+}
 public class MalformedArchive(Exception exception) : Error(Severity.Fatal) {
     public Exception Exception = exception;
 }

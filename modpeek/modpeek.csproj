@@ -45,6 +45,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\LibModPeek\LibModPeek.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Reference Include="Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
 			<HintPath>..\lib\Mono.Cecil.0.11.5\lib\net40\Mono.Cecil.dll</HintPath>
 		</Reference>

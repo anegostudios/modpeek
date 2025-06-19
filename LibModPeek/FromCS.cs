@@ -6,10 +6,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace VintageStory.ModPeek;
 
-static partial class ModPeek
+public static partial class ModPeek
 {
     // See tests for examples of the attributes we are trying to parse.
-    static bool TryGetCsInfo(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
+    /// <remarks> The ModInfo obtained from this function has not been validated! </remarks>
+    public static bool TryExtractModInfoFromCs(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true); // no need to dispose here
         var sourceText = SourceText.From(reader, bytes.Length);

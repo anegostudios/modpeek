@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{0243E139-E2B0-4646-A482-AF71895A3EE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModPeek", "ModPeek\ModPeek.csproj", "{82F3E6B6-7B01-4D51-8565-2E405590389F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibModPeek", "LibModPeek\LibModPeek.csproj", "{4E6F60EB-D7B9-41D0-8B8A-78ADBF814B81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{82F3E6B6-7B01-4D51-8565-2E405590389F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82F3E6B6-7B01-4D51-8565-2E405590389F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82F3E6B6-7B01-4D51-8565-2E405590389F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E6F60EB-D7B9-41D0-8B8A-78ADBF814B81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E6F60EB-D7B9-41D0-8B8A-78ADBF814B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E6F60EB-D7B9-41D0-8B8A-78ADBF814B81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E6F60EB-D7B9-41D0-8B8A-78ADBF814B81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

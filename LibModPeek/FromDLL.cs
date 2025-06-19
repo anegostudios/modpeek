@@ -5,7 +5,8 @@ namespace VintageStory.ModPeek;
 
 public static partial class ModPeek
 {
-    static bool TryGetDllInfo(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
+    /// <remarks> The ModInfo obtained from this function has not been validated! </remarks>
+    public static bool TryExtractModInfoFromDll(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
     {
         static CustomAttributeNamedArgument GetProperty(CustomAttribute customAttribute, string propName)
         {
