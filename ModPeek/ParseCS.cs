@@ -182,6 +182,14 @@ static partial class ModPeek
                                     modInfo.Contributors = contributors;
                                 } break;
 
+                                case nameof(ModInfoAttribute.CoreMod): {
+                                    if (!TryParseBoolean(propValueExpr, out modInfo.CoreMod)) {
+                                        errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.CoreMod), "boolean", propValueExpr.ToString()));
+                                        error = true;
+                                        break;
+                                    }
+                                } break;
+
                                 default:
                                     errorCallback(new Errors.UnexpectedProperty(propName, propValueExpr.ToString()));
                                     error = true;
@@ -254,10 +262,12 @@ static partial class ModPeek
             parsed = false;
             if (expression is not LiteralExpressionSyntax literal) return false;
             switch (literal.Token.Kind()) {
+                case SyntaxKind.FalseKeyword:
                 case SyntaxKind.FalseLiteralExpression:
                     parsed = false;
                     return true;
 
+                case SyntaxKind.TrueKeyword:
                 case SyntaxKind.TrueLiteralExpression:
                     parsed = true;
                     return true;

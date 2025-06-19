@@ -63,6 +63,8 @@ public class UnexpectedJsonRootType(JsonValueKind expectedType, JsonElement give
 public class MalformedPrimaryModID(string malformedInput) : Error(Severity.Fatal) {
     public string MalformedInput = malformedInput;
 }
+public class NotACoreMod() : Error(Severity.Fatal) {
+}
 public class MalformedDependencyModID(string malformedInput) : Error(Severity.Warning) {
     public string MalformedInput = malformedInput;
 }

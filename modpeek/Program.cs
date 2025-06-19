@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.Arm;
 
 namespace VintageStory.ModPeek;
 
@@ -210,6 +211,20 @@ Operands:
             modInfo.ModID = null;
         }
 
+        switch (modInfo.ModID) {
+            case "game": case "creative": case "survival":
+                // These are the core mods
+                break;
+
+            default:
+                if (modInfo.CoreMod) {
+                    errorCallback(new Errors.NotACoreMod());
+                    modInfo.CoreMod = false;
+                    error = true;
+                }
+                break;
+        }
+
         if (string.IsNullOrWhiteSpace(modInfo.Version)) {
             errorCallback(new Errors.MissingRequiredProperty(nameof(ModInfo), nameof(modInfo.Version)));
             error = true;
@@ -403,6 +418,7 @@ Operands:
             Errors.UnexpectedValue            err => $"Property '{err.TargetProperty}' was expected to be {err.Expected}, but was '{err.Given}'.",
             Errors.UnexpectedJsonPropertyType err => $"Property '{err.TargetProperty}' was expected to be of type {err.ExpectedType}, but was '{err.Given.GetRawText()}'.",
             Errors.MalformedPrimaryModID      err => $"The ModID of this mod ('{err.MalformedInput}') is malformed.",
+            Errors.NotACoreMod                    => $"The provided mod is not a core mod, but the CoreMod property was set to true.",
             Errors.MalformedPrimaryVersion    err => $"The Version of this mod ('{err.MalformedInput}') is malformed.",
             Errors.MalformedNetworkVersion    err => $"The NetworkVersion of this mod ('{err.MalformedInput}') is malformed.",
             Errors.ModIDGenerationFailure     err => $"Mod name '{err.MalformedInput}' failed to be converted to a ModID: {err.Exception}.",

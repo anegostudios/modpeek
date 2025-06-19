@@ -155,6 +155,26 @@ public class Tests
 			Version        = "0.0.1",
 			NetworkVersion = "0.0.1",
 		},
+		["SurvivalMod.cs"] = new ModInfo() {
+			Type           = EnumModType.Code,
+			ModID          = "survival",
+			Name           = "Survival Mode",
+			Authors        = [ "Tyron" ],
+			Version        = "1.0.0",
+			NetworkVersion = "1.0.0",
+			CoreMod        = true,
+			IconPath       = "game/textures/gui/modicon.png",
+			Description    = "Survival world blocks, items, crafting mechanics, creatures and pretty world generation",
+			Dependencies = [ new("game", null) ],
+		},
+		["zzz_not_a_core_mod.cs"] = new ModInfo() {
+			Type         = EnumModType.Code,
+			ModID        = "notcore",
+			Name         = "not core",
+			Authors      = [ "Rennorb" ],
+			Version        = "0.0.1",
+			NetworkVersion = "0.0.1",
+		},
 	};
 
 	[TestMethod]
@@ -167,6 +187,7 @@ public class Tests
 	[DataRow("StepUp-v1.2.0.cs")]
 	[DataRow("zzz_test1.cs")]
 	[DataRow("zzz_test2.cs")]
+	[DataRow("SurvivalMod.cs")]
 	public void NoError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Valid/" + inputFilePath);
@@ -218,6 +239,7 @@ public class Tests
 	[TestMethod]
 	[DataRow("jtraits_0.2.6.zip")]
 	[DataRow("zzz_escapes_root_path.cs")]
+	[DataRow("zzz_not_a_core_mod.cs")]
 	public void ValidationError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
