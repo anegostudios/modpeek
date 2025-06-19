@@ -274,7 +274,7 @@ Operands:
         }
 
         if (string.IsNullOrWhiteSpace(modInfo.Website)) {
-            modInfo.Website = null; // unify the value
+            modInfo.Website = ""; // unify the value
         }
         else {
             try {

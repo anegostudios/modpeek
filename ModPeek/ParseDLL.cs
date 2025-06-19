@@ -51,8 +51,8 @@ public static partial class ModPeek
             GetPropertyValueArray<string>(modInfoAttr, nameof(ModInfoAttribute.Contributors)),
             GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.Website)),
             side,
-            GetPropertyValue<bool?>(modInfoAttr, nameof(ModInfoAttribute.RequiredOnClient)).GetValueOrDefault(),
-            GetPropertyValue<bool?>(modInfoAttr, nameof(ModInfoAttribute.RequiredOnServer)).GetValueOrDefault(),
+            GetPropertyValue<bool?>(modInfoAttr, nameof(ModInfoAttribute.RequiredOnClient)).GetValueOrDefault(true),
+            GetPropertyValue<bool?>(modInfoAttr, nameof(ModInfoAttribute.RequiredOnServer)).GetValueOrDefault(true),
             dependencies
         ) {
             NetworkVersion = GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.NetworkVersion)),
