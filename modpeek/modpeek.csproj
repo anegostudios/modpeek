@@ -9,7 +9,7 @@
 
 		<AssemblyName>modpeek</AssemblyName>
 		<Product>ModPeek</Product>
-		<Version>2.0.0.0</Version>
+		<Version>2.1.1.0</Version>
 		<Description>A tool for extracting inforamtion about from Vintage Story mod files.</Description>
 		<Company>Anego Studios</Company>
 		<Copyright>Copyright © 2025</Copyright>

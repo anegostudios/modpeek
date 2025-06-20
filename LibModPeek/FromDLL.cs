@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using System.Text.Json;
 using Vintagestory.API.Common;
 
 namespace VintageStory.ModPeek;
@@ -6,8 +7,9 @@ namespace VintageStory.ModPeek;
 public static partial class ModPeek
 {
     /// <remarks> The ModInfo obtained from this function has not been validated! </remarks>
-    public static bool TryExtractModInfoFromDll(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
+    public static bool TryExtractModInfoAndWorldConfigFromDll(byte[] bytes, out ModInfo? modInfo, out ModWorldConfiguration? worldConfig, Action<Errors.Error> errorCallback)
     {
+        //TODO(Rennorb) @correctness: Improve distinction between missing and null. :MissingVsNull
         static CustomAttributeNamedArgument GetProperty(CustomAttribute customAttribute, string propName)
         {
             return customAttribute.Properties.SingleOrDefault(property => property.Name == propName);
@@ -29,6 +31,7 @@ public static partial class ModPeek
         if (modInfoAttr == null) {
             errorCallback(new Errors.MissingAssemblyAttribute(nameof(ModInfoAttribute)));
             modInfo = null;
+            worldConfig = null;
             return false;
         }
 
@@ -59,6 +62,25 @@ public static partial class ModPeek
             NetworkVersion = GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.NetworkVersion)),
             IconPath = GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.IconPath)),
         };
+
+
+        var worldConfigString = GetPropertyValue<string>(modInfoAttr, nameof(ModInfoAttribute.WorldConfig));
+        if (worldConfigString != null) { // :MissingVsNull
+            var worldConfigLocation = $"{nameof(ModInfoAttribute)}.{nameof(ModInfoAttribute.WorldConfig)}";
+            try {
+                var worldConfigJson = JsonDocument.Parse(worldConfigString, new() {
+                    AllowTrailingCommas = true,
+                });
+                return TryParseWorldConfigFromJsonCaseInsensitive(worldConfigLocation, worldConfigJson, out worldConfig, errorCallback);
+            }
+            catch(Exception e) {
+                errorCallback(new Errors.MalformedJson(worldConfigLocation, e));
+                worldConfig = null;
+                return false;
+            }
+        }
+
+        worldConfig = null;
         return true;
     }
 }

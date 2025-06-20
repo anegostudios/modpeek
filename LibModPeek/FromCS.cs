@@ -3,6 +3,7 @@ using Vintagestory.API.Common;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Text.Json;
 
 namespace VintageStory.ModPeek;
 
@@ -10,7 +11,7 @@ public static partial class ModPeek
 {
     // See tests for examples of the attributes we are trying to parse.
     /// <remarks> The ModInfo obtained from this function has not been validated! </remarks>
-    public static bool TryExtractModInfoFromCs(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
+    public static bool TryExtractModInfoAndWorldConfigFromCs(byte[] bytes, out ModInfo? modInfo, out ModWorldConfiguration? worldConfig, Action<Errors.Error> errorCallback)
     {
         var reader = new StreamReader(new MemoryStream(bytes), Encoding.UTF8, detectEncodingFromByteOrderMarks: true); // no need to dispose here
         var sourceText = SourceText.From(reader, bytes.Length);
@@ -20,6 +21,7 @@ public static partial class ModPeek
         modInfo = new ModInfo() {
             Type = EnumModType.Code,
         };
+        worldConfig = null;
 
         var error = false;
         var dependencies = new List<ModDependency>();
@@ -136,11 +138,26 @@ public static partial class ModPeek
                                     break;
 
                                 case nameof(ModInfoAttribute.WorldConfig):
-                                    if (!TryParseString(propValueExpr, out var _)) {
+                                    if (!TryParseString(propValueExpr, out var worldConfigString) || worldConfigString == null) {
                                         errorCallback(new Errors.PrimitiveParsingFailure(nameof(ModInfoAttribute.WorldConfig), "string", propValueExpr.ToString()));
                                         error = true;
+                                        break;
                                     }
-                                    //TODO(Rennorb) @completeness: I am unsure what this is supposed to do or where to store it.
+
+                                    var worldConfigLocation = $"{nameof(ModInfoAttribute)}.{nameof(ModInfoAttribute.WorldConfig)}[@{propValueExpr.GetLocation()}]";
+                                    try {
+                                        var worldConfigJson = JsonDocument.Parse(worldConfigString, new() {
+                                            AllowTrailingCommas = true,
+                                        });
+                                        error |= !TryParseWorldConfigFromJsonCaseInsensitive(worldConfigLocation, worldConfigJson, out worldConfig, errorCallback);
+                                    }
+                                    catch(Exception e) {
+                                        errorCallback(new Errors.MalformedJson(worldConfigLocation, e));
+                                        worldConfig = null;
+                                        error = true;
+                                        break;
+                                    }
+
                                     break;
 
                                 case nameof(ModInfoAttribute.Authors): {
@@ -192,7 +209,7 @@ public static partial class ModPeek
                                 } break;
 
                                 default:
-                                    errorCallback(new Errors.UnexpectedProperty(propName, propValueExpr.ToString()));
+                                    errorCallback(new Errors.UnexpectedProperty("modinfo.json", propName, propValueExpr.ToString()));
                                     error = true;
                                     break;
                             }
@@ -231,6 +248,7 @@ public static partial class ModPeek
 
         if (modInfo == null) {
             errorCallback(new Errors.MissingAssemblyAttribute("ModInfo"));
+            worldConfig = null;
             return false;
         }
 

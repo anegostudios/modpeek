@@ -18,8 +18,9 @@ public class CouldNotDetermineFileType() : Error(Severity.Fatal) {
 public class MalformedArchive(Exception exception) : Error(Severity.Fatal) {
     public Exception Exception = exception;
 }
-public class MalformedJson(Exception exception) : Error(Severity.Fatal) {
-    public Exception Exception = exception;
+public class MalformedJson(string sourceStructure, Exception exception) : Error(Severity.Fatal) {
+    public string    SourceStructure = sourceStructure;
+    public Exception Exception       = exception;
 }
 public class MissingAssemblyAttribute(string attributeName) : Error(Severity.Fatal) {
     public string AttributeName = attributeName;
@@ -46,31 +47,40 @@ public class MissingRequiredProperty(string targetStructure, string propertyName
 }
 public class MissingDependencyModID() : Error(Severity.Warning) {
 }
-public class UnexpectedProperty(string propertyName, string propertyValue) : Error(Severity.Warning) {
-    public string PropertyName  = propertyName;
-    public string PropertyValue = propertyValue;
+public class UnexpectedProperty(string targetStructure, string propertyName, string propertyValue) : Error(Severity.Warning) {
+    public string TargetStructure = targetStructure;
+    public string PropertyName    = propertyName;
+    public string PropertyValue   = propertyValue;
 }
-public class UnexpectedValue(string targetProperty, string expected, string given) : Error(Severity.Warning) {
-    public string TargetProperty = targetProperty;
-    public string Expected       = expected;
-    public string Given          = given;
+public class UnexpectedValue(string targetStructure, string targetProperty, string expected, string given) : Error(Severity.Warning) {
+    public string TargetStructure = targetStructure;
+    public string TargetProperty  = targetProperty;
+    public string Expected        = expected;
+    public string Given           = given;
 }
 public class UnexpectedJsonPropertyType(string targetProperty, JsonValueKind expectedType, JsonElement given) : Error(Severity.Warning) {
     public string        TargetProperty = targetProperty;
     public JsonValueKind ExpectedType   = expectedType;
     public JsonElement   Given          = given;
 }
-public class UnexpectedJsonRootType(JsonValueKind expectedType, JsonElement given) : Error(Severity.Fatal) {
-    public JsonValueKind ExpectedType   = expectedType;
-    public JsonElement   Given          = given;
+public class UnexpectedJsonRootType(string sourceStructure, JsonValueKind expectedType, JsonElement given) : Error(Severity.Fatal) {
+    public string        SourceStructure = sourceStructure;
+    public JsonValueKind ExpectedType    = expectedType;
+    public JsonElement   Given           = given;
 }
 public class MalformedPrimaryModID(string malformedInput) : Error(Severity.Fatal) {
     public string MalformedInput = malformedInput;
 }
 public class NotACoreMod() : Error(Severity.Fatal) {
 }
-public class MalformedDependencyModID(string malformedInput) : Error(Severity.Warning) {
-    public string MalformedInput = malformedInput;
+public class MalformedDependencyModID(string targetStructure, string malformedInput) : Error(Severity.Warning) {
+    public string TargetStructure = targetStructure;
+    public string MalformedInput  = malformedInput;
+}
+public class ArrayLengthMismatch(string targetStructure, string targetProperty1, string targetProperty2) : Error(Severity.Warning) {
+    public string TargetStructure = targetStructure;
+    public string TargetProperty1 = targetProperty1;
+    public string TargetProperty2 = targetProperty2;
 }
 public class MalformedPrimaryVersion(string malformedInput) : Error(Severity.Fatal) {
     public string MalformedInput = malformedInput;

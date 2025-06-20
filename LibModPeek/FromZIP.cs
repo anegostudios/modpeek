@@ -8,13 +8,27 @@ public static partial class ModPeek
 {
     // See tests for examples of the attributes we are trying to parse.
     /// <remarks> The ModInfo obtained from this function has not been validated! </remarks>
-    public static bool TryExtractModInfoFromZip(byte[] bytes, out ModInfo? modInfo, Action<Errors.Error> errorCallback)
+    public static bool TryExtractModInfoAndWorldConfigFromZip(byte[] bytes, out ModInfo? modInfo, out ModWorldConfiguration? worldConfig, Action<Errors.Error> errorCallback)
     {
         try
         {
+            bool ok = true;
             using var zip = new ZipArchive(new MemoryStream(bytes));
-            var modInfoEntry = zip.GetEntry("modinfo.json");
-            if (modInfoEntry == null) {
+            if (zip.GetEntry("modinfo.json") is ZipArchiveEntry modInfoEntry) {
+                using var inputStream = modInfoEntry.Open();
+                try {
+                    var root = JsonDocument.Parse(inputStream, new() {
+                        AllowTrailingCommas = true,
+                    });
+                    ok = TryParseModInfoFromJsonCaseInsensitive(root, out modInfo, errorCallback);
+                }
+                catch(Exception e) {
+                    errorCallback(new Errors.MalformedJson("modinfo.json", e));
+                    modInfo = null;
+                    ok = false;
+                }
+            }
+            else {
                 // Figure out if all entries start with the same path prefix. In that case the user zipped a folder instead of individual files.
                 string? commonPathPrefix = null;
                 foreach(var entry in zip.Entries) {
@@ -34,26 +48,34 @@ public static partial class ModPeek
                 }
                 errorCallback(new Errors.MissingFileInArchiveRoot("modinfo.json", commonPathPrefix != null));
                 modInfo = null;
-                return false;
+                ok = false;
             }
 
-            using var inputStream = modInfoEntry.Open();
-            try {
-                var root = JsonDocument.Parse(inputStream, new() {
-                    AllowTrailingCommas = true,
-                });
-                return TryParseModInfoFromJsonCaseInsensitive(root, out modInfo, errorCallback);
+            if (zip.GetEntry("worldconfig.json") is ZipArchiveEntry worldConfigEntry) {
+                using var inputStream = worldConfigEntry.Open();
+                try {
+                    var root = JsonDocument.Parse(inputStream, new() {
+                        AllowTrailingCommas = true,
+                    });
+                    ok &= TryParseWorldConfigFromJsonCaseInsensitive("worldconfig.json", root, out worldConfig, errorCallback);
+                }
+                catch(Exception e) {
+                    errorCallback(new Errors.MalformedJson("worldconfig.json", e));
+                    worldConfig = null;
+                    ok = false;
+                }
             }
-            catch(Exception e) {
-                errorCallback(new Errors.MalformedJson(e));
-                modInfo = null;
-                return false;
+            else {
+                worldConfig = null;
             }
+
+            return ok;
         }
         catch (Exception e)
         {
             errorCallback(new Errors.MalformedArchive(e));
             modInfo = null;
+            worldConfig = null;
             return false;
         }
     }

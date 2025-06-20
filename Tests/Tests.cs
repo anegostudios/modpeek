@@ -167,6 +167,18 @@ public class Tests
 			Description    = "Survival world blocks, items, crafting mechanics, creatures and pretty world generation",
 			Dependencies = [ new("game", null) ],
 		},
+		["SurvivalModFixed.cs"] = new ModInfo() {
+			Type           = EnumModType.Code,
+			ModID          = "survival",
+			Name           = "Survival Mode",
+			Authors        = [ "Rennorb" ],
+			Version        = "1.0.0",
+			NetworkVersion = "1.0.0",
+			CoreMod        = true,
+			IconPath       = "game/textures/gui/modicon.png",
+			Description    = "Survival world blocks, items, crafting mechanics, creatures and pretty world generation",
+			Dependencies = [ new("game", null) ],
+		},
 		["zzz_not_a_core_mod.cs"] = new ModInfo() {
 			Type         = EnumModType.Code,
 			ModID        = "notcore",
@@ -187,13 +199,13 @@ public class Tests
 	[DataRow("StepUp-v1.2.0.cs")]
 	[DataRow("zzz_test1.cs")]
 	[DataRow("zzz_test2.cs")]
-	[DataRow("SurvivalMod.cs")]
+	[DataRow("SurvivalModFixed.cs")]
 	public void NoError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Valid/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		Assert.IsTrue(ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError), "Parsing failed.");
+		Assert.IsTrue(ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError), "Parsing failed.");
 
 		Assert.IsTrue(ModPeek.ValidateModInfo(modInfo!, PrintErrorToStdError), "Validation failed.");
 
@@ -208,7 +220,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		var parseOk = ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError);
+		var parseOk = ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError);
 		Assert.IsFalse(parseOk, "Expected parsing to fail.");
 		Assert.IsNull(modInfo, "Expected fatal error to not produce modinfo.");
 	}
@@ -217,12 +229,13 @@ public class Tests
 	[DataRow("TexturePack and CloneTool 1.0.4.zip")]
 	[DataRow("warriordrink_v1.0.2.zip")]
 	[DataRow("WeaponPackAlphaUnofficial_1.6.0.zip")]
+	[DataRow("SurvivalMod.cs")]
 	public void ParserError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		var parseOk = ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError);
+		var parseOk = ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError);
 		if(modInfo != null) {
 			ModPeek.ValidateModInfo(modInfo, PrintErrorToStdError);
 		}
@@ -245,7 +258,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		Assert.IsTrue(ModPeek.TryExtractModInfo(f, out var modInfo, PrintErrorToStdError), "Parsing failed.");
+		Assert.IsTrue(ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError), "Parsing failed.");
 
 		Assert.IsFalse(ModPeek.ValidateModInfo(modInfo!, PrintErrorToStdError), "Validation should have failed.");
 

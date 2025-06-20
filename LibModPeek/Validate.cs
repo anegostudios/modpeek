@@ -87,7 +87,7 @@ public static partial class ModPeek
         }
 
         if (!Enum.IsDefined(typeof(EnumModType), modInfo.Type)) {
-            errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Type), nameof(EnumModType), modInfo.Type.ToString()));
+            errorCallback(new Errors.UnexpectedValue(nameof(ModInfo), nameof(modInfo.Type), nameof(EnumModType), modInfo.Type.ToString()));
             error = true;
             // Code mods are probably the ones with the highest security restrictions, so we pick that as a fallback.
             // We don't have a neutral default.
@@ -95,7 +95,7 @@ public static partial class ModPeek
         }
 
         if (!Enum.IsDefined(typeof(EnumAppSide), modInfo.Side)) {
-            errorCallback(new Errors.UnexpectedValue(nameof(modInfo.Side), nameof(EnumAppSide), modInfo.Side.ToString()));
+            errorCallback(new Errors.UnexpectedValue(nameof(ModInfo), nameof(modInfo.Side), nameof(EnumAppSide), modInfo.Side.ToString()));
             error = true;
             modInfo.Side = 0;
         }
@@ -171,7 +171,7 @@ public static partial class ModPeek
                 continue;
             }
             if (!ModInfo.IsValidModID(dependency.ModID)) {
-                errorCallback(new Errors.MalformedDependencyModID(dependency.ModID));
+                errorCallback(new Errors.MalformedDependencyModID($"{nameof(ModInfo)}.{nameof(modInfo.Dependencies)}[{dependency.ModID}]", dependency.ModID));
                 dependencies.RemoveAt(i);
                 error = true;
                 continue;
@@ -227,5 +227,125 @@ public static partial class ModPeek
         s_versionProp!.SetValue(dep, version);
         return dep;
     }
-}
 
+
+    const EnumDataType BROKEN_DATA_TYPE = (EnumDataType)(-1);
+
+    /// <summary>Validates the data inside a ModWorldConfiguration and sets invalid fields to blank / default values.</summary>
+    /// <returns>False if any data is invalid.</returns>
+    public static bool ValidateWorldConfig(ModWorldConfiguration worldConfig, Action<Errors.Error> errorCallback)
+    {
+        var error = false;
+
+        if (worldConfig.PlayStyles == null) {
+            errorCallback(new Errors.MissingRequiredProperty(nameof(ModWorldConfiguration), nameof(ModWorldConfiguration.PlayStyles)));
+            error = true;
+            worldConfig.PlayStyles = [];
+        }
+        else {
+            var psList = new List<PlayStyle>(worldConfig.PlayStyles.Length);
+            int i = -1;
+            foreach(var playstyle in worldConfig.PlayStyles) {
+                i++;
+
+                if (string.IsNullOrWhiteSpace(playstyle.Code)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{nameof(worldConfig.PlayStyles)}[{i}].{nameof(playstyle.Code)}", "non-empty string", playstyle.Code));
+                    error = true;
+                    playstyle.Code = ""; // unify
+                }
+
+                if (string.IsNullOrWhiteSpace(playstyle.PlayListCode)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{nameof(worldConfig.PlayStyles)}[{i}].{nameof(playstyle.PlayListCode)}", "non-empty string", playstyle.PlayListCode));
+                    error = true;
+                    playstyle.PlayListCode = ""; // unify
+                }
+
+                if (string.IsNullOrWhiteSpace(playstyle.LangCode)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{nameof(worldConfig.PlayStyles)}[{i}].{nameof(playstyle.LangCode)}", "non-empty string", playstyle.LangCode));
+                    error = true;
+                    playstyle.LangCode = ""; // unify
+                }
+
+                var modsList = new List<string>(playstyle.Mods.Length);
+                int j = -1;
+                foreach(var modId in playstyle.Mods) {
+                    j++;
+
+                    if(!ModInfo.IsValidModID(modId)) {
+                        errorCallback(new Errors.MalformedDependencyModID($"{nameof(ModWorldConfiguration)}.{nameof(worldConfig.PlayStyles)}[{i}].{nameof(playstyle.Mods)}[{j}]", modId));
+                        error = true;
+                        continue;
+                    }
+
+                    modsList.Add(modId);
+                }
+                playstyle.Mods = modsList.ToArray();
+
+                if (string.IsNullOrWhiteSpace(playstyle.WorldType)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{nameof(worldConfig.PlayStyles)}[{i}].{nameof(playstyle.WorldType)}", "non-empty string", playstyle.WorldType));
+                    error = true;
+                    playstyle.WorldType = ""; // unify
+                }
+
+                psList.Add(playstyle);
+            }
+            worldConfig.PlayStyles = psList.ToArray();
+        }
+
+        if (worldConfig.WorldConfigAttributes == null) {
+            errorCallback(new Errors.MissingRequiredProperty(nameof(ModWorldConfiguration), nameof(ModWorldConfiguration.WorldConfigAttributes)));
+            error = true;
+            worldConfig.WorldConfigAttributes = [];
+        }
+        else {
+            var attributeList = new List<WorldConfigurationAttribute>(worldConfig.WorldConfigAttributes.Length);
+            int i = -1;
+            foreach(var attribute in worldConfig.WorldConfigAttributes) {
+                i++;
+                bool skipAttribute = false;
+
+                if(attribute.DataType == BROKEN_DATA_TYPE) {
+                    skipAttribute = true; // Already errored in the parsing phase, no error here.
+                }
+                if(!Enum.IsDefined(attribute.DataType)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{worldConfig.WorldConfigAttributes}[{i}].{nameof(attribute.DataType)}", nameof(EnumDataType), attribute.DataType.ToString()));
+                    error = true;
+                    skipAttribute = true;
+                }
+
+                if (string.IsNullOrWhiteSpace(attribute.Category)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{nameof(worldConfig.WorldConfigAttributes)}[{i}].{nameof(attribute.Category)}", "non-empty string", attribute.Category));
+                    error = true;
+                    attribute.Category = ""; // unify
+                }
+
+                if (string.IsNullOrWhiteSpace(attribute.Code)) {
+                    errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{nameof(worldConfig.WorldConfigAttributes)}[{i}].{nameof(attribute.Code)}", "non-empty string", attribute.Code));
+                    error = true;
+                    skipAttribute = true;
+                }
+
+                if (attribute.Names != null) {
+                    if (attribute.Values == null) {
+                        errorCallback(new Errors.MissingRequiredProperty(nameof(ModWorldConfiguration), $"{nameof(worldConfig.WorldConfigAttributes)}[{i}].{nameof(attribute.Values)}") { Severity = Errors.Severity.Warning });
+                        error = true;
+                        skipAttribute = true;
+                    }
+                    else if (attribute.Values.Length != attribute.Names.Length) {
+                        errorCallback(new Errors.ArrayLengthMismatch(nameof(ModWorldConfiguration),
+                            $"{nameof(worldConfig.WorldConfigAttributes)}[{i}].{nameof(attribute.Values)}",
+                            $"{nameof(worldConfig.WorldConfigAttributes)}[{i}].{nameof(attribute.Names)}"
+                        ));
+                        error = true;
+                        skipAttribute = true;
+                    }
+                }
+
+                if(!skipAttribute) attributeList.Add(attribute);
+            }
+            worldConfig.WorldConfigAttributes = attributeList.ToArray();
+        }
+
+        return !error;
+    }
+}

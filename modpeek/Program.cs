@@ -92,50 +92,55 @@ Operands:
             Environment.Exit(1); return;
         }
 
-        var error = !TryExtractModInfo(f, out var modInfo, PrintErrorToStdError);
-        if (modInfo == null) {
-            Environment.Exit(1); return;
-        }
+        bool error = !TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError);
+        if (modInfo     != null)   error |= !ValidateModInfo(modInfo, PrintErrorToStdError);
+        if (worldConfig != null)   error |= !ValidateWorldConfig(worldConfig, PrintErrorToStdError);
 
-        error |= !ValidateModInfo(modInfo, PrintErrorToStdError);
         if (error && !alwaysPrint) {
             Environment.Exit(1); return;
         }
 
-
         if (idAndVersion) {
-            Console.WriteLine(modInfo.ModID + ":" + modInfo.Version);
+            if (modInfo != null) {
+                Console.WriteLine(modInfo.ModID + ":" + modInfo.Version);
+            }
         }
         else {
-            static string EscapedAndJoinCommaSeparatedList<T>(IReadOnlyList<T> list)
-            {
-                var b = new StringBuilder(list.Count * 16);
-                for(int i = 0; i < list.Count; i++) {
-                    if(i > 0) b.Append(", ");
-                    int start = b.Length;
-                    b.Append(list[i]);
-                    b.Replace(", ", @",\ ", start, b.Length - start);
-                }
-                return b.ToString();
+            if (modInfo != null) {
+                Console.WriteLine("Id: " + modInfo.ModID);
+                Console.WriteLine("Name: " + modInfo.Name);
+                Console.WriteLine("Version: " + modInfo.Version);
+                Console.WriteLine("Type: " + modInfo.Type);
+                Console.WriteLine("Side: " + modInfo.Side);
+                Console.WriteLine("RequiredOnClient: " + modInfo.RequiredOnClient);
+                Console.WriteLine("RequiredOnServer: " + modInfo.RequiredOnServer);
+                Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
+                Console.WriteLine("IconPath: " + modInfo.IconPath);
+                Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
+                Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
+                Console.WriteLine("Contributors: " + EscapedAndJoinCommaSeparatedList(modInfo.Contributors));
+                Console.WriteLine("Website: " + modInfo.Website);
+                Console.WriteLine("Dependencies: " + string.Join(", ", modInfo.Dependencies));
             }
 
-            Console.WriteLine("Id: " + modInfo.ModID);
-            Console.WriteLine("Name: " + modInfo.Name);
-            Console.WriteLine("Version: " + modInfo.Version);
-            Console.WriteLine("Type: " + modInfo.Type);
-            Console.WriteLine("Side: " + modInfo.Side);
-            Console.WriteLine("RequiredOnClient: " + modInfo.RequiredOnClient);
-            Console.WriteLine("RequiredOnServer: " + modInfo.RequiredOnServer);
-            Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
-            Console.WriteLine("IconPath: " + modInfo.IconPath);
-            Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
-            Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
-            Console.WriteLine("Contributors: " + EscapedAndJoinCommaSeparatedList(modInfo.Contributors));
-            Console.WriteLine("Website: " + modInfo.Website);
-            Console.WriteLine("Dependencies: " + string.Join(", ", modInfo.Dependencies));
+            if (worldConfig != null) {
+                //TODO
+            }
         }
 
         Environment.Exit(error ? 1 : 0);
+    }
+
+    static string EscapedAndJoinCommaSeparatedList<T>(IReadOnlyList<T> list)
+    {
+        var b = new StringBuilder(list.Count * 16);
+        for(int i = 0; i < list.Count; i++) {
+            if(i > 0) b.Append(", ");
+            int start = b.Length;
+            b.Append(list[i]);
+            b.Replace(", ", @",\ ", start, b.Length - start);
+        }
+        return b.ToString();
     }
 
     static void PrintErrorToStdError(Errors.Error error)
@@ -155,14 +160,14 @@ Operands:
             Errors.MalformedArchive           err => $"The zip archive failed to decode: {err.Exception.Message}.",
             Errors.MissingFileInArchiveRoot   err => $"The zip archive is missing a file named {err.FileName} in its root."+
                 (err.LikelyCompressedDirectory ? " All files in the archive share a common parent directory, so you likely compressed a directory instead of individual files." : ""),
-            Errors.MalformedJson              err => $"The provided modinfo.json was malformed: {err.Exception.Message}.",
-            Errors.UnexpectedJsonRootType     err => $"The root element of the modinfo.json must be a {err.ExpectedType}, but was {err.Given.ValueKind}.",
+            Errors.MalformedJson              err => $"The provided {err.SourceStructure} was malformed: {err.Exception.Message}.",
+            Errors.UnexpectedJsonRootType     err => $"The root element of {err.SourceStructure} must be a {err.ExpectedType}, but was {err.Given.ValueKind}.",
             Errors.MissingAssemblyAttribute   err => $"Missing expected assembly-attribute '{err.AttributeName}'.",
             Errors.PrimitiveParsingFailure    err => $"The {err.TargetProperty} property failed to parse as a {err.ExpectedType} (was '{err.MalformedInput}').",
             Errors.StringParsingFailure       err => $"The {err.TargetProperty} property failed to convert from a string to {err.ExpectedType} (was '{err.MalformedInput}').",
             Errors.MissingRequiredProperty    err => $"{err.TargetStructure} is missing the required property '{err.PropertyName}'.",
-            Errors.UnexpectedProperty         err => $"Unexpected property '{err.PropertyName}' with value '{err.PropertyValue}'.",
-            Errors.UnexpectedValue            err => $"Property '{err.TargetProperty}' was expected to be {err.Expected}, but was '{err.Given}'.",
+            Errors.UnexpectedProperty         err => $"Unexpected property '{err.PropertyName}' on {err.TargetStructure} with value '{err.PropertyValue}'.",
+            Errors.UnexpectedValue            err => $"Property '{err.TargetProperty}' on {err.TargetStructure} was expected to be {err.Expected}, but was '{err.Given}'.",
             Errors.UnexpectedJsonPropertyType err => $"Property '{err.TargetProperty}' was expected to be of type {err.ExpectedType}, but was '{err.Given.GetRawText()}'.",
             Errors.MalformedPrimaryModID      err => $"The ModID of this mod ('{err.MalformedInput}') is malformed.",
             Errors.NotACoreMod                    => $"The provided mod is not a core mod, but the CoreMod property was set to true.",
@@ -170,10 +175,11 @@ Operands:
             Errors.MalformedNetworkVersion    err => $"The NetworkVersion of this mod ('{err.MalformedInput}') is malformed.",
             Errors.ModIDGenerationFailure     err => $"Mod name '{err.MalformedInput}' failed to be converted to a ModID: {err.Exception}.",
             Errors.MissingDependencyModID         => $"A dependency was specified that does not have target ModID set.",
-            Errors.MalformedDependencyModID   err => $"Dependency '{err.MalformedInput}' specifies a malformed ModID.",
+            Errors.MalformedDependencyModID   err => $"The dependency {err.TargetStructure} specifies a malformed ModID '{err.MalformedInput}'.",
             Errors.MalformedDependencyVersion err => $"Dependency '{err.Dependency}' specifies a malformed target Version ('{err.MalformedInput}').",
             Errors.MalformedAuthorName        err => $"'{err.MalformedInput}' is not a valid author name.",
             Errors.MalformedContributorName   err => $"'{err.MalformedInput}' is not a valid contributor name.",
+            Errors.ArrayLengthMismatch        err => $"{err.TargetProperty1} and {err.TargetProperty2} on {err.TargetStructure} do not have the same length.",
             _ => $"Unknown error of severity {error.Severity}: {error}."
         };
     }
