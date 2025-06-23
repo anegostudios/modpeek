@@ -187,6 +187,17 @@ public class Tests
 			Version        = "0.0.1",
 			NetworkVersion = "0.0.1",
 		},
+		["VSCreativeMod.dll"] = new ModInfo() {
+			Type         = EnumModType.Code,
+			ModID        = "creative",
+			Name         = "Creative Mode",
+			Authors      = [ "Tyron" ],
+			Version        = "1.21.0-pre.1",
+			NetworkVersion = "1.21.5",
+			Description    = "World editing, worldedit GUI and super flat world generation",
+			Dependencies = [ new("game", null) ],
+			IconPath     = "game/textures/gui/modicon.png",
+		},
 	};
 
 	[TestMethod]
@@ -200,6 +211,7 @@ public class Tests
 	[DataRow("zzz_test1.cs")]
 	[DataRow("zzz_test2.cs")]
 	[DataRow("SurvivalModFixed.cs")]
+	[DataRow("VSCreativeMod.dll")]
 	public void NoError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Valid/" + inputFilePath);

@@ -56,6 +56,10 @@
 			<SpecificVersion>False</SpecificVersion>
 			<HintPath>..\lib\Vintagestory\VintagestoryAPI.dll</HintPath>
 		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<!-- This is only here because the worldconfig stores a newtonsoft jtoken ... -->
+			<HintPath>..\lib\Vintagestory\Newtonsoft.Json.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 </Project>
