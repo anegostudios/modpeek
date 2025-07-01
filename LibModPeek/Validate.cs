@@ -307,7 +307,7 @@ public static partial class ModPeek
                 if(attribute.DataType == BROKEN_DATA_TYPE) {
                     skipAttribute = true; // Already errored in the parsing phase, no error here.
                 }
-                if(!Enum.IsDefined(attribute.DataType)) {
+                else if(!Enum.IsDefined(attribute.DataType)) {
                     errorCallback(new Errors.UnexpectedValue(nameof(ModWorldConfiguration), $"{worldConfig.WorldConfigAttributes}[{i}].{nameof(attribute.DataType)}", nameof(EnumDataType), attribute.DataType.ToString()));
                     error = true;
                     skipAttribute = true;
