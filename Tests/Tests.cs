@@ -1,4 +1,4 @@
-﻿using Vintagestory.API.Common;
+using Vintagestory.API.Common;
 
 [assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
 
@@ -198,6 +198,24 @@ public class Tests
 			Dependencies = [ new("game", null) ],
 			IconPath     = "game/textures/gui/modicon.png",
 		},
+		["vintagemenu_1.0.0.zip"] = new ModInfo() {
+			Type         = EnumModType.Content,
+			ModID        = "vintagemenu",
+			Name         = "Vintage Menu",
+			Authors      = [ "Shazza" ],
+			Version        = "1.0.0",
+			NetworkVersion = "1.0.0",
+			Description    = "Restores the pre-1.22 main menu background, and allows for easily inserted custom ones!",
+			Dependencies = [ new("game", "1.22.0") ],
+			BackgroundPaths = [
+				"assets/vintagemenu/textures/gui/backgrounds/mainmenu1.png",
+				"assets/vintagemenu/textures/gui/backgrounds/mainmenu2.png",
+				"assets/vintagemenu/textures/gui/backgrounds/mainmenu3.png",
+				"assets/vintagemenu/textures/gui/backgrounds/mainmenu4.png",
+				"assets/vintagemenu/textures/gui/backgrounds/mainmenu5.png",
+				"assets/vintagemenu/textures/gui/backgrounds/mainmenu6.png"
+			],
+		},
 	};
 
 	[TestMethod]
@@ -212,6 +230,7 @@ public class Tests
 	[DataRow("zzz_test2.cs")]
 	[DataRow("SurvivalModFixed.cs")]
 	[DataRow("VSCreativeMod.dll")]
+	[DataRow("vintagemenu_1.0.0.zip")]
 	public void NoError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Valid/" + inputFilePath);

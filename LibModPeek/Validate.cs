@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -133,62 +133,97 @@ public static partial class ModPeek
             }
         }
 
-        var authors = (modInfo.Authors as List<string>) ?? modInfo.Authors.ToList();
-        for (int i = authors.Count - 1; i >= 0; i--) {
-            var author = authors[i];
-            foreach(var c in author) {
-                if(c == '\n' || c == '\r') {
-                    errorCallback(new Errors.MalformedAuthorName(author));
+
+        if(modInfo.BackgroundPaths == null) {
+            modInfo.BackgroundPaths  = []; // unify
+        }
+        else {
+            var backgrounds = new List<string>(modInfo.BackgroundPaths);
+
+            var tempPath = Path.GetTempPath();
+            int i = 0;
+            foreach(var path in backgrounds) {
+                var err = false;
+                try {
+                    var testPath = Path.GetFullPath(Path.Combine(tempPath, path));
+                    err = !testPath.StartsWith(tempPath, StringComparison.Ordinal);
+                }
+                catch { err = true; }
+
+                if (err) {
+                    errorCallback(new Errors.StringParsingFailure($"{nameof(ModInfo)}.{nameof(modInfo.BackgroundPaths)}[{i}]", "a relative path within the mod", path));
                     error = true;
-                    authors.RemoveAt(i);
-                    break;
+                    backgrounds.RemoveAt(i);
+                }
+
+                i++;
+            }
+
+            modInfo.BackgroundPaths = backgrounds.ToArray();
+        }
+
+        {
+            var authors = (modInfo.Authors as List<string>) ?? modInfo.Authors.ToList();
+            for (int i = authors.Count - 1; i >= 0; i--) {
+                var author = authors[i];
+                foreach(var c in author) {
+                    if(c == '\n' || c == '\r') {
+                        errorCallback(new Errors.MalformedAuthorName(author));
+                        error = true;
+                        authors.RemoveAt(i);
+                        break;
+                    }
                 }
             }
+            if (authors.Count != modInfo.Authors.Count) modInfo.Authors = authors;
         }
-        if (authors.Count != modInfo.Authors.Count) modInfo.Authors = authors;
 
-        var contributors = (modInfo.Contributors as List<string>) ?? modInfo.Contributors.ToList();
-        for (int i = contributors.Count - 1; i >= 0; i--) {
-            var contributor = contributors[i];
-            foreach(var c in contributor) {
-                if(c == '\n' || c == '\r') {
-                    errorCallback(new Errors.MalformedContributorName(contributor));
-                    error = true;
-                    contributors.RemoveAt(i);
-                    break;
+        {
+            var contributors = (modInfo.Contributors as List<string>) ?? modInfo.Contributors.ToList();
+            for (int i = contributors.Count - 1; i >= 0; i--) {
+                var contributor = contributors[i];
+                foreach(var c in contributor) {
+                    if(c == '\n' || c == '\r') {
+                        errorCallback(new Errors.MalformedContributorName(contributor));
+                        error = true;
+                        contributors.RemoveAt(i);
+                        break;
+                    }
                 }
             }
+            if (contributors.Count != modInfo.Contributors.Count) modInfo.Contributors = contributors;
         }
-        if (contributors.Count != modInfo.Contributors.Count) modInfo.Contributors = contributors;
 
-        var dependencies = (modInfo.Dependencies as List<ModDependency>) ?? modInfo.Dependencies.ToList();
-        for (int i = dependencies.Count - 1; i >= 0; i--) {
-            var dependency = dependencies[i];
-            if (string.IsNullOrWhiteSpace(dependency.ModID)) {
-                errorCallback(new Errors.MissingDependencyModID());
-                error = true;
-                dependencies.RemoveAt(i);
-                continue;
-            }
-            if (!ModInfo.IsValidModID(dependency.ModID)) {
-                errorCallback(new Errors.MalformedDependencyModID($"{nameof(ModInfo)}.{nameof(modInfo.Dependencies)}[{dependency.ModID}]", dependency.ModID));
-                dependencies.RemoveAt(i);
-                error = true;
-                continue;
-            }
+        {
+            var dependencies = (modInfo.Dependencies as List<ModDependency>) ?? modInfo.Dependencies.ToList();
+            for (int i = dependencies.Count - 1; i >= 0; i--) {
+                var dependency = dependencies[i];
+                if (string.IsNullOrWhiteSpace(dependency.ModID)) {
+                    errorCallback(new Errors.MissingDependencyModID());
+                    error = true;
+                    dependencies.RemoveAt(i);
+                    continue;
+                }
+                if (!ModInfo.IsValidModID(dependency.ModID)) {
+                    errorCallback(new Errors.MalformedDependencyModID($"{nameof(ModInfo)}.{nameof(modInfo.Dependencies)}[{dependency.ModID}]", dependency.ModID));
+                    dependencies.RemoveAt(i);
+                    error = true;
+                    continue;
+                }
 
-            if (string.IsNullOrEmpty(dependency.Version) || dependency.Version == "*") {
-                if (s_modIDProp == null) FindDependencyBackingFields();
-                s_versionProp!.SetValue(dependency, null); // unify the value
+                if (string.IsNullOrEmpty(dependency.Version) || dependency.Version == "*") {
+                    if (s_modIDProp == null) FindDependencyBackingFields();
+                    s_versionProp!.SetValue(dependency, null); // unify the value
+                }
+                else if (!IsValidVersion(dependency.Version)) {
+                    errorCallback(new Errors.MalformedDependencyVersion(dependency.ModID, dependency.Version));
+                    error = true;
+                    dependencies.RemoveAt(i);
+                    continue;
+                }
             }
-            else if (!IsValidVersion(dependency.Version)) {
-                errorCallback(new Errors.MalformedDependencyVersion(dependency.ModID, dependency.Version));
-                error = true;
-                dependencies.RemoveAt(i);
-                continue;
-            }
+            if (modInfo.Dependencies.Count != dependencies.Count) modInfo.Dependencies = dependencies;
         }
-        if (modInfo.Dependencies.Count != dependencies.Count) modInfo.Dependencies = dependencies;
 
         return !error;
     }

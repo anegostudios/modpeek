@@ -7,6 +7,11 @@
     },
     "ModPeek (print help)": {
       "commandName": "Project"
+    },
+    "ModPeek background images": {
+      "commandName": "Project",
+      "commandLineArgs": "-p vintagemenu_1.0.0.zip",
+      "workingDirectory": "../Tests/TestInput/Valid/"
     }
   }
 }

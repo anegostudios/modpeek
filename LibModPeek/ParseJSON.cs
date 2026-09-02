@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 
@@ -171,6 +171,29 @@ public static partial class ModPeek
 
                     modInfo.Website = prop.Value.GetString();
                     break;
+
+                case "backgroundpaths": {
+                    if(prop.Value.ValueKind != JsonValueKind.Array) {
+                        errorCallback(new Errors.UnexpectedJsonPropertyType(nameof(ModInfo.BackgroundPaths), JsonValueKind.Array, prop.Value));
+                        error = true;
+                        break;
+                    }
+
+                    var backgrounds = new List<string>();
+                    int i = 0;
+                    foreach(var element in prop.Value.EnumerateArray()) {
+                        if(element.ValueKind != JsonValueKind.String) {
+                            errorCallback(new Errors.UnexpectedJsonPropertyType($"{nameof(ModInfo.Authors)}[{i}]", JsonValueKind.String, element));
+                            error = true;
+                        }
+                        else {
+                            backgrounds.Add(element.GetString()!);
+                        }
+                        i++;
+                    }
+
+                    modInfo.BackgroundPaths = backgrounds.ToArray();
+                } break;
 
                 case "authors": {
                     if(prop.Value.ValueKind != JsonValueKind.Array) {

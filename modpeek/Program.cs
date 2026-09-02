@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace VintageStory.ModPeek;
 
@@ -120,6 +120,7 @@ Operands:
                 Console.WriteLine("Contributors: " + EscapedAndJoinCommaSeparatedList(modInfo.Contributors));
                 Console.WriteLine("Website: " + modInfo.Website);
                 Console.WriteLine("Dependencies: " + string.Join(", ", modInfo.Dependencies));
+                Console.WriteLine("BackgroundPaths: " + EscapedAndJoinCommaSeparatedList(modInfo.BackgroundPaths));
             }
 
             if (worldConfig != null) {
