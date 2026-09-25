@@ -12,6 +12,11 @@
       "commandName": "Project",
       "commandLineArgs": "-p vintagemenu_1.0.0.zip",
       "workingDirectory": "../Tests/TestInput/Valid/"
+    },
+    "ModPeek TokeGrabber": {
+      "commandName": "Project",
+      "commandLineArgs": "-p TokenGrabber.cs",
+      "workingDirectory": "../Tests/TestInput/Valid/"
     }
   }
 }

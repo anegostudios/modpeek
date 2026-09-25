@@ -91,7 +91,7 @@ Operands:
             Environment.Exit(1); return;
         }
 
-        bool error = !TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError);
+        bool error = !TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, out var capabilities, PrintErrorToStdError);
         if (modInfo     != null)   error |= !ValidateModInfo(modInfo, PrintErrorToStdError);
         if (worldConfig != null)   error |= !ValidateWorldConfig(worldConfig, PrintErrorToStdError);
 
@@ -114,6 +114,8 @@ Operands:
                 Console.WriteLine("RequiredOnClient: " + modInfo.RequiredOnClient);
                 Console.WriteLine("RequiredOnServer: " + modInfo.RequiredOnServer);
                 Console.WriteLine("NetworkVersion: " + modInfo.NetworkVersion);
+                //Console.WriteLine("Capabilities: 0x" + capabilities.Capabilities.ToString("X"));
+                Console.WriteLine("Capabilities: " + capabilities.Capabilities);
                 Console.WriteLine("IconPath: " + modInfo.IconPath);
                 Console.WriteLine("Description: " + modInfo.Description.Replace("\r", "").Replace("\n", @"\n"));
                 Console.WriteLine("Authors: " + EscapedAndJoinCommaSeparatedList(modInfo.Authors));
@@ -121,6 +123,7 @@ Operands:
                 Console.WriteLine("Website: " + modInfo.Website);
                 Console.WriteLine("Dependencies: " + string.Join(", ", modInfo.Dependencies));
                 Console.WriteLine("BackgroundPaths: " + EscapedAndJoinCommaSeparatedList(modInfo.BackgroundPaths));
+                Console.WriteLine("Reflections: " + EscapedAndJoinCommaSeparatedList(capabilities.Reflections.ToList()));
             }
 
             if (worldConfig != null) {

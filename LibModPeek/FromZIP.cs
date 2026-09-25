@@ -1,4 +1,7 @@
-﻿using System.IO.Compression;
+using Mono.Cecil;
+using System.Diagnostics;
+using System.IO.Compression;
+using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using Vintagestory.API.Common;
 
@@ -8,7 +11,7 @@ public static partial class ModPeek
 {
     // See tests for examples of the attributes we are trying to parse.
     /// <remarks> The ModInfo obtained from this function has not been validated! </remarks>
-    public static bool TryExtractModInfoAndWorldConfigFromZip(byte[] bytes, out ModInfo? modInfo, out ModWorldConfiguration? worldConfig, Action<Errors.Error> errorCallback)
+    public static bool TryExtractModInfoAndWorldConfigFromZip(byte[] bytes, out ModInfo? modInfo, out ModWorldConfiguration? worldConfig, SecurityRelevantCapabilities capabilitites, Action<Errors.Error> errorCallback)
     {
         try
         {
@@ -67,6 +70,37 @@ public static partial class ModPeek
             }
             else {
                 worldConfig = null;
+            }
+
+            foreach(var entry in zip.Entries) {
+                if(!entry.Name.EndsWith('/')) {
+                    Stream entryStream;
+                    try {
+                        entryStream = entry.Open();
+                    }
+                    catch(Exception e) {
+                        errorCallback(new Errors.MalformedArchive(e));
+                        ok = false;
+                        continue;
+                    }
+
+                    AssemblyDefinition assemblyDefinition;
+                    try {
+                        assemblyDefinition = AssemblyDefinition.ReadAssembly(entryStream);
+                    }
+                    catch(Exception) {
+                        if(entry.Name.EndsWith("dll")) {
+                            capabilitites.Capabilities |= Capabilities.UnmanagedMemoryAccess; // assume its a unmanaged lib if this fails despite being a dll.
+                        }
+
+                        entryStream.Dispose();
+                        continue;
+                    }
+
+                    ScanAssemblyForCapabilities<MonoTypeProvider, MonoMethodDeclarationProvider, MonoParameterProvider, MonoAttributeProvider, MonoAssemblyProvider, MonoModuleProvider, MonoImportProvider, MonoDeclaredTypeProvider>(capabilitites, new(assemblyDefinition));
+
+                    entryStream.Dispose();
+                }
             }
 
             return ok;

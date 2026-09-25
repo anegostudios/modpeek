@@ -7,8 +7,8 @@ namespace VintageStory.ModPeek.Tests;
 [TestClass]
 public class Tests
 {
-	readonly Dictionary<string, ModInfo> _referenceInfos = new() {
-		["Bee_Keeper_v1.1.0.zip"] = new ModInfo() {
+	readonly Dictionary<string, (ModInfo, SecurityRelevantCapabilities)> _referenceInfos = new() {
+		["Bee_Keeper_v1.1.0.zip"] = (new ModInfo() {
 			Type             = EnumModType.Content,
 			ModID            = "beekeepernew",
 			Name             = "Bee Keeper",
@@ -18,8 +18,11 @@ public class Tests
 			Authors          = [ "The Unnamed System", "ComitatensSaxoni" ],
 			Side             = EnumAppSide.Universal,
 			RequiredOnClient = true,
-		},
-		["FarmlandDropsWithNutrients.dll"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["FarmlandDropsWithNutrients.dll"] = (new ModInfo() {
 			Type             = EnumModType.Code,
 			ModID            = "farmlanddropswithnutrients",
 			Name             = "Farmland Drops With Nutrients",
@@ -28,8 +31,13 @@ public class Tests
 			NetworkVersion   = "1.1.1",
 			Authors          = [ "jayugg" ],
 			Side             = EnumAppSide.Universal,
-		},
-		["jtraits_0.2.6.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+			Capabilities = Capabilities.Reflection,
+			UsesHarmony = true,
+			Reflections = [ "Vintagestory.API.Common.CollectibleObject.TryMergeStacks(ItemStackMergeOperation)" ],
+		}),
+		["jtraits_0.2.6.zip"] = (new ModInfo() {
 			Type         = EnumModType.Content,
 			ModID        = "jtraits",
 			Name         = "jtraits",
@@ -37,8 +45,11 @@ public class Tests
 			Description  = "MODIFIES ALL THE VANILLA TRAITS",
 			Version      = null, // malformed '0.2.6 ', trailing space
 			Dependencies = [ new("game", null) ],
-		},
-		["Recycle Metalwörk_v1.0.3.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["Recycle Metalwörk_v1.0.3.zip"] = (new ModInfo() {
 			Type           = EnumModType.Content,
 			ModID          = "recyclemetalwork",
 			Name           = " recyclemetalwork",
@@ -46,8 +57,11 @@ public class Tests
 			Description    = "Added quick recycle recipes for already installed Shanks on metalwork, metal objects, ruined weapons, and scrap weapons.",
 			Version        = "1.0.3",
 			NetworkVersion = "1.0.3",
-		},
-		["StepUp-v1.2.0.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["StepUp-v1.2.0.cs"] = (new ModInfo() {
 			Type           = EnumModType.Code,
 			Side           = EnumAppSide.Client,
 			ModID          = "stepup",
@@ -58,8 +72,11 @@ public class Tests
 			NetworkVersion = "1.2.0",
 			Website        = "https://www.vintagestory.at/forums/topic/3349-stepup-v120/",
 			Dependencies   = [ new("game", null) ],
-		},
-		["tailoringforall.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["tailoringforall.zip"] = (new ModInfo() {
 			Type           = EnumModType.Content,
 			ModID          = "tailoringforall",
 			Name           = "Tailoring for All",
@@ -68,8 +85,11 @@ public class Tests
 			Version        = "1.0.1",
 			NetworkVersion = "1.0.1",
 			Dependencies   = [ new("game", null) ],
-		},
-		["TexturePack and CloneTool 1.0.4.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["TexturePack and CloneTool 1.0.4.zip"] = (new ModInfo() {
 			Type           = EnumModType.Content,
 			ModID          = "clonetoolforsica",
 			Name           = "Texture improvements for CloneTool in SICA.",
@@ -81,8 +101,11 @@ public class Tests
 			TextureSize    =  32,
 			//Dependencies   = [ new("game", "1.20.9") ], // malformed, wrong property name (dependency instead of dependencies)
 			Website        = "https://mods.vintagestory.at/clonetoolforsica",
-		},
-		["warriordrink_v1.0.2.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["warriordrink_v1.0.2.zip"] = (new ModInfo() {
 			Type           = EnumModType.Content,
 			Name           = "A Warrior's Drink! ",
 			ModID          = "warriordrink",
@@ -93,8 +116,11 @@ public class Tests
 			NetworkVersion = "1.0.2",
 			//Dependencies   = [ new("game", "1.19.0") ], // malformed, wrong property name (gameversions instead of dependencies)
 			Website        = "http://wiki.vintagestory.at/",
-		},
-		["Waxpress_1.0.0.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["Waxpress_1.0.0.zip"] = (new ModInfo() {
 			Type           = EnumModType.Content,
 			ModID          = "waxpress", // generated from name
 			Name           = "Waxpress",
@@ -103,8 +129,11 @@ public class Tests
 			Version        = "1.0.0",
 			NetworkVersion = "1.0.0",
 			Dependencies   = [ new("game", "1.19.8") ],
-		},
-		["WeaponPackAlphaUnofficial_1.6.0.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["WeaponPackAlphaUnofficial_1.6.0.zip"] = (new ModInfo() {
 			Type             = EnumModType.Code,
 			ModID            = "weaponpackalphaunoff",
 			Name             = "Alpha Weapon Pack unofficial",
@@ -115,8 +144,11 @@ public class Tests
 			RequiredOnClient = true,
 			RequiredOnServer = true,
 			//Dependencies     = [ new("game", "1.20.0") ], // malformed, wrong property name (dependency instead of dependencies)
-		},
-		["wildcraftfruit_1.3.0.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["wildcraftfruit_1.3.0.zip"] = (new ModInfo() {
 			Type           = EnumModType.Content,
 			ModID          = "wildcraftfruit",
 			Name           = "Wildcraft: Fruits and Nuts",
@@ -125,8 +157,11 @@ public class Tests
 			Version        = "1.3.0",
 			NetworkVersion = "1.3.0",
 			Dependencies   = [ new("herbarium", "1.4.0") ],
-		},
-		["zzz_test1.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["zzz_test1.cs"] = (new ModInfo() {
 			Type           = EnumModType.Code,
 			ModID          = "test1",
 			Name           = "Test1",
@@ -135,8 +170,11 @@ public class Tests
 			Version        = "0.0.1",
 			NetworkVersion = "0.0.1",
 			Dependencies   = [ new("game", null), new("somemod", "1.2.3-pre.4") ],
-		},
-		["zzz_test2.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["zzz_test2.cs"] = (new ModInfo() {
 			Type         = EnumModType.Code,
 			ModID        = "test2",
 			Name         = "Test2",
@@ -146,16 +184,22 @@ public class Tests
 			Version        = "0.0.1",
 			NetworkVersion = "0.0.1",
 			Dependencies = [ new("game", null), new("somemod", "1.2.3-pre.4") ],
-		},
-		["zzz_escapes_root_path.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["zzz_escapes_root_path.cs"] = (new ModInfo() {
 			Type         = EnumModType.Code,
 			ModID        = "noescapingtherootpath",
 			Name         = "no escaping the root path",
 			Authors      = [ "Rennorb" ],
 			Version        = "0.0.1",
 			NetworkVersion = "0.0.1",
-		},
-		["SurvivalMod.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["SurvivalMod.cs"] = (new ModInfo() {
 			Type           = EnumModType.Code,
 			ModID          = "survival",
 			Name           = "Survival Mode",
@@ -166,8 +210,11 @@ public class Tests
 			IconPath       = "game/textures/gui/modicon.png",
 			Description    = "Survival world blocks, items, crafting mechanics, creatures and pretty world generation",
 			Dependencies = [ new("game", null) ],
-		},
-		["SurvivalModFixed.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["SurvivalModFixed.cs"] = (new ModInfo() {
 			Type           = EnumModType.Code,
 			ModID          = "survival",
 			Name           = "Survival Mode",
@@ -178,16 +225,22 @@ public class Tests
 			IconPath       = "game/textures/gui/modicon.png",
 			Description    = "Survival world blocks, items, crafting mechanics, creatures and pretty world generation",
 			Dependencies = [ new("game", null) ],
-		},
-		["zzz_not_a_core_mod.cs"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["zzz_not_a_core_mod.cs"] = (new ModInfo() {
 			Type         = EnumModType.Code,
 			ModID        = "notcore",
 			Name         = "not core",
 			Authors      = [ "Rennorb" ],
 			Version        = "0.0.1",
 			NetworkVersion = "0.0.1",
-		},
-		["VSCreativeMod.dll"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["VSCreativeMod.dll"] = (new ModInfo() {
 			Type         = EnumModType.Code,
 			ModID        = "creative",
 			Name         = "Creative Mode",
@@ -197,8 +250,11 @@ public class Tests
 			Description    = "World editing, worldedit GUI and super flat world generation",
 			Dependencies = [ new("game", null) ],
 			IconPath     = "game/textures/gui/modicon.png",
-		},
-		["vintagemenu_1.0.0.zip"] = new ModInfo() {
+			BackgroundPaths  = [ ],
+		}, new SecurityRelevantCapabilities() {
+			Capabilities = Capabilities.Reflection | Capabilities.DirectFileAccess,
+		}),
+		["vintagemenu_1.0.0.zip"] = (new ModInfo() {
 			Type         = EnumModType.Content,
 			ModID        = "vintagemenu",
 			Name         = "Vintage Menu",
@@ -215,7 +271,23 @@ public class Tests
 				"assets/vintagemenu/textures/gui/backgrounds/mainmenu5.png",
 				"assets/vintagemenu/textures/gui/backgrounds/mainmenu6.png"
 			],
-		},
+		}, new SecurityRelevantCapabilities() {
+
+		}),
+		["TokenGrabber.cs"] = (new ModInfo() {
+			Type         = EnumModType.Code,
+			ModID        = "tokengrabber",
+			Side         = EnumAppSide.Server,
+			Name         = "TokenGrabber",
+			Authors      = [ "Rennorb" ],
+			Version        = "1.1.1",
+			NetworkVersion = "1.1.1",
+			Description    = "Adds a server-side command to grab the current server token before 1.23 for claiming on the server browser.",
+			Dependencies = [ new("game", "1.21.0") ],
+			BackgroundPaths = [ ],
+		}, new SecurityRelevantCapabilities() {
+			Capabilities = Capabilities.Reflection | Capabilities.DirectFileAccess,
+		}),
 	};
 
 	[TestMethod]
@@ -231,17 +303,19 @@ public class Tests
 	[DataRow("SurvivalModFixed.cs")]
 	[DataRow("VSCreativeMod.dll")]
 	[DataRow("vintagemenu_1.0.0.zip")]
+	[DataRow("TokenGrabber.cs")]
 	public void NoError(string inputFilePath)
 	{
 		var f = new FileInfo("TestInput/Valid/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		Assert.IsTrue(ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError), "Parsing failed.");
+		Assert.IsTrue(ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, out var capabilities, PrintErrorToStdError), "Parsing failed.");
 
 		Assert.IsTrue(ModPeek.ValidateModInfo(modInfo!, PrintErrorToStdError), "Validation failed.");
 
 		Assert.IsTrue(_referenceInfos.TryGetValue(inputFilePath, out var reference), "Missing ref data");
-		CompareInfos(reference, modInfo!);
+		CompareInfos(reference.Item1, modInfo!);
+		CompareCaps(reference.Item2, capabilities);
 	}
 
 	[TestMethod]
@@ -251,7 +325,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		var parseOk = ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError);
+		var parseOk = ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, out var capabilities, PrintErrorToStdError);
 		Assert.IsFalse(parseOk, "Expected parsing to fail.");
 		Assert.IsNull(modInfo, "Expected fatal error to not produce modinfo.");
 	}
@@ -266,7 +340,7 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		var parseOk = ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError);
+		var parseOk = ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, out var capabilities, PrintErrorToStdError);
 		if(modInfo != null) {
 			ModPeek.ValidateModInfo(modInfo, PrintErrorToStdError);
 		}
@@ -274,10 +348,11 @@ public class Tests
 		//NOTE(Rennorb): Wired order so we get to see validation errors as well.
 		Assert.IsFalse(parseOk, "Expected parsing to fail.");
 
+		Assert.IsTrue(_referenceInfos.TryGetValue(inputFilePath, out var reference), "Missing ref data");
 		if(modInfo != null) {
-			Assert.IsTrue(_referenceInfos.TryGetValue(inputFilePath, out var reference), "Missing ref data");
-			CompareInfos(reference, modInfo);
+			CompareInfos(reference.Item1, modInfo);
 		}
+		CompareCaps(reference.Item2, capabilities);
 	}
 
 	[TestMethod]
@@ -289,12 +364,12 @@ public class Tests
 		var f = new FileInfo("TestInput/Defect/" + inputFilePath);
 		Assert.IsTrue(f.Exists, "File seems to be missing.");
 
-		Assert.IsTrue(ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, PrintErrorToStdError), "Parsing failed.");
+		Assert.IsTrue(ModPeek.TryExtractModInfoAndWorldConfig(f, out var modInfo, out var worldConfig, out var capabilities, PrintErrorToStdError), "Parsing failed.");
 
 		Assert.IsFalse(ModPeek.ValidateModInfo(modInfo!, PrintErrorToStdError), "Validation should have failed.");
 
 		Assert.IsTrue(_referenceInfos.TryGetValue(inputFilePath, out var reference), "Missing ref data");
-		CompareInfos(reference, modInfo!);
+		CompareInfos(reference.Item1, modInfo!);
 	}
 
 	static void PrintErrorToStdError(Errors.Error error)
@@ -315,19 +390,39 @@ public class Tests
 		Assert.AreEqual(reference.IconPath, info.IconPath);
 		Assert.AreEqual(reference.RequiredOnClient, info.RequiredOnClient);
 		Assert.AreEqual(reference.RequiredOnServer, info.RequiredOnServer);
+		AssertListEquals(reference.BackgroundPaths, info.BackgroundPaths);
 		AssertListEquals(reference.Authors, info.Authors);
 		AssertListEquals(reference.Contributors, info.Contributors);
 		AssertListEquals(reference.Dependencies, info.Dependencies, (a, b) => a.ToString() == b.ToString());
 	}
 
+	public void CompareCaps(SecurityRelevantCapabilities reference, SecurityRelevantCapabilities caps)
+	{
+		Assert.AreEqual(reference.Capabilities, caps.Capabilities);
+		Assert.AreEqual(reference.UsesHarmony, caps.UsesHarmony);
+		Assert.AreEqual(reference.Capabilities, caps.Capabilities);
+		AssertListEquals(reference.Reflections, caps.Reflections);
+	}
+
 	/// <summary> Replacement for CollectionAssert AreEqual that prints the collections. </summary>
-	void AssertListEquals<T>(IReadOnlyList<T> reference, IReadOnlyList<T> list)
+	void AssertListEquals<T>(IReadOnlyList<T>? reference, IReadOnlyList<T>? list)
 	{
 		AssertListEquals(reference, list, (a, b) => Object.Equals(a, b));
 	}
 	/// <summary> Replacement for CollectionAssert AreEqual that prints the collections. </summary>
-	void AssertListEquals<T>(IReadOnlyList<T> reference, IReadOnlyList<T> list, System.Func<T, T, bool> comparator)
+	void AssertListEquals<T>(HashSet<T>? reference, HashSet<T>? list)
 	{
+		if(reference == null && list == null) return;
+
+		var _reference = reference.ToList(); _reference.Sort();
+		var _list = list.ToList(); _list.Sort();
+		AssertListEquals(_reference, _list, (a, b) => Object.Equals(a, b));
+	}
+	/// <summary> Replacement for CollectionAssert AreEqual that prints the collections. </summary>
+	void AssertListEquals<T>(IReadOnlyList<T>? reference, IReadOnlyList<T>? list, System.Func<T, T, bool> comparator)
+	{
+		if(reference == null && list == null) return;
+
 		var error = false;
 		if(reference.Count != list.Count) {
 			Console.Error.WriteLine($"List length mismatch: {reference.Count} != {list.Count}");
